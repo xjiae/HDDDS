@@ -16,6 +16,7 @@ print(torch.__version__)
 
 from mvtec import MVTecDataset
 from swat import SWaTDataset
+from wadi import WADIDataset
 
 torch.manual_seed(1234)
 #####
@@ -56,18 +57,24 @@ def load_mvtec_data(category, seed=None):
 def load_swat_data():
     swat = SWaTDataset()
     return swat
-
+def load_wadi_data():
+    wadi = WADIDataset()
+    return wadi
 def get_dataset(ds_name):
     if 'mvtec' in ds_name:
         return load_mvtec_data(ds_name.split('_')[1])
     elif 'swat' in ds_name:
         return load_swat_data()
+    elif 'wadi' in ds_name:
+        return load_wadi_data()
 
 if __name__ == "__main__":
     # # example
     # dataset = get_dataset('mvtec_bottle')
     # example
-    dataset = get_dataset('swat')
+    # dataset = get_dataset('swat')
+    # example
+    dataset = get_dataset('wadi')
     breakpoint()
     
 

@@ -8,8 +8,8 @@ import torch.utils.data
 
 class SWaTDataset(torch.utils.data.Dataset):
     def __init__(self, root=None):
-        self.data = pd.read_csv('swat_processed.csv')
-        self.explanation = pd.read_csv('swat_gt_exp.csv')
+        self.data = pd.read_csv('data/swat/swat_processed.csv')
+        self.explanation = pd.read_csv('data/swat/swat_gt_exp.csv')
         
 
     def __getitem__(self, index):
@@ -82,6 +82,8 @@ def look_up(gt, data, time):
                 return attacked_index
     return
 
+
+
 def main():
     gt = process_gt()
 
@@ -93,6 +95,7 @@ def main():
 
     # test = test.iloc[:, 1:]
     # train = train.iloc[:, 1:]
+    
     test['date'] = pd.to_datetime(test.index)
     test['epoch'] = test['date'].astype('int64')//1e9
      

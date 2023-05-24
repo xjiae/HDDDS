@@ -38,7 +38,7 @@ MVTEC_CATEGORIES = [
     "wood",
     "zipper",
 ]
-mvtec_dir = '../mvtec-ad'
+mvtec_dir = 'data/mvtec-ad'
 
 # Returns the train and validation dataset
 def load_mvtec_data(category, seed=None):

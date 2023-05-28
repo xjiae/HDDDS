@@ -7,18 +7,85 @@ import torch
 import torch.utils.data
 import os
 
+WINDOW_SIZE = 40
+WINDOW_GIVEN = 39
+
+
+
+
 class HAIDataset(torch.utils.data.Dataset):
-    def __init__(self, root=None):
-        self.data = pd.read_csv('data/hai/processed.csv')
-        self.explanation = pd.read_csv('data/hai/gt_exp.csv')
+    def __init__(self, root=None, all = False, train = False):
+        self.all = all
+        if all:
+            self.data = pd.read_csv('data/hai/processed.csv')
+            self.explanation = pd.read_csv('data/hai/gt_exp.csv')
+        else:
+            if train:
+                self.data = pd.read_csv('data/hai/train_processed.csv')
+                self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
+            else:
+                self.data = pd.read_csv('data/hai/test_processed.csv')
+                self.explanation = pd.read_csv('data/hai/test_gt_exp.csv')
         
 
     def __getitem__(self, index):
-        return self.data.iloc[index, 1:-1].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
+       
+        if self.all:
+            index = index.item()
+            return self.data.iloc[index, 1:-1].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
+        else:
+            return self.data.iloc[index, 1:-2].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
+            
        
 
     def __len__(self):
         return self.data.shape[0]
+
+
+class HAISlidingDataset(torch.utils.data.Dataset):
+    def __init__(self, stride=1, attacks=None, train = True):
+        if train:
+            df =  pd.read_csv('data/hai/train_processed.csv', index_col=0)
+        else:
+            df = pd.read_csv('data/hai/test_processed.csv', index_col=0)
+            attacks = df['label'].values
+        
+        timestamps = df['epoch']
+        self.ts = timestamps.values
+        
+        df = df.drop(columns=['epoch', 'label'])
+        self.tag_values = np.array(df, dtype=np.float32)
+        self.valid_idxs = []
+        for L in range(len(self.ts) - WINDOW_SIZE + 1):
+            R = L + WINDOW_SIZE - 1
+            if (self.ts[R]-self.ts[L]) == WINDOW_SIZE - 1:
+                self.valid_idxs.append(L)
+        self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
+        self.n_idxs = len(self.valid_idxs)
+        print(f"# of valid windows: {self.n_idxs}")
+        if attacks is not None:
+            self.attacks = np.array(attacks, dtype=np.float32)
+            self.with_attack = True
+        else:
+            self.with_attack = False
+
+   
+    
+    
+    def __len__(self):
+        return self.n_idxs
+
+    def __getitem__(self, idx):
+        i = self.valid_idxs[idx]
+        last = i + WINDOW_SIZE - 1
+        item = {"attack": self.attacks[last]} if self.with_attack else {}
+        item["ts"] = self.ts[i + WINDOW_SIZE - 1]
+        item["x"] = torch.from_numpy(self.tag_values[i : i + WINDOW_GIVEN])
+        item["y"] = torch.from_numpy(self.tag_values[last])
+        return item
+    
+    def get_ts(self):
+        return self.ts
 
 # max min(0-1)
 def norm(train, test):
@@ -110,7 +177,14 @@ def preprocess(path, train=True):
         dfs.append(df)
     df = pd.concat(dfs)
     return df
-
+def normalize(df, min, max):
+        ndf = df.copy()
+        for c in df.columns:
+            if min[c] == max[c]:
+                ndf[c] = df[c] - min[c]
+            else:
+                ndf[c] = (df[c] - min[c]) / (max[c] - min[c])
+        return ndf
 def main():
     gt = process_gt()
     path = '../../../data2/xjiae/hddds/hai/hai-22.04/'
@@ -120,12 +194,12 @@ def main():
     
     test_labels = test['Attack'].values
     
-    all_mask = []
-    for i in tqdm(range(len(train))):
-        mask = np.zeros(train.shape[1]-2)
-        all_mask.append(mask)
+    # train_mask = []
+    # for i in tqdm(range(len(train))):
+    #     mask = np.zeros(train.shape[1]-2)
+    #     train_mask.append(mask)
   
-  
+    test_mask = []
     for i in tqdm(range(len(test))):
         if test_labels[i] == 0:
             mask = np.zeros(test.shape[1]-2)
@@ -134,18 +208,42 @@ def main():
             mask = np.zeros(test.shape[1]-2)
 
             mask[attacked] = 1
-        all_mask.append(mask)
+        test_mask.append(mask)
     
-    test = test.drop(columns = ['epoch'])
-    train = train.drop(columns = ['epoch'])
+    # test = test.drop(columns = ['epoch'])
+    # train = train.drop(columns = ['epoch'])
     
     
-    combined = pd.concat([train, test])
-    combined = combined.rename(columns={'Attack':'label'})
-    combined.to_csv("data/hai/processed.csv")
+    # combined = pd.concat([train, test])
+    # combined = combined.rename(columns={'Attack':'label'})
+    # combined.to_csv("data/hai/processed.csv")
     
-    df = pd.DataFrame(all_mask)
-    df.to_csv('data/hai/gt_exp.csv', index = False)
+    train = train.rename(columns={'Attack':'label'})
+    test = test.rename(columns={'Attack':'label'})
+    
+    
+    train_df = train.drop(columns=['epoch', 'label'])
+    test_df = test.drop(columns=['label', 'epoch'])
+    
+    
+    min = train_df.min()
+    max = train_df.max()    
+        
+    train_df = normalize(train_df, min, max).ewm(alpha=0.9).mean()
+    test_df = normalize(test_df, min, max).ewm(alpha=0.9).mean()
+    
+    train_df['label'] = train['label']
+    train_df['epoch'] = train['epoch']
+    
+    
+    test_df['label'] = test['label']
+    test_df['epoch'] = test['epoch']
+        
+    train_df.to_csv("data/hai/train_processed.csv")
+    test_df.to_csv("data/hai/test_processed.csv")
+    
+    # df = pd.DataFrame(test_mask)
+    # df.to_csv('data/hai/test_gt_exp.csv', index = False)
     breakpoint()
     
     

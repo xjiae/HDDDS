@@ -2,7 +2,7 @@
 
 import warnings
 warnings.filterwarnings("ignore")
-from train import *
+from run_model import *
 # from explainers.shap import SHAP
 from explainers.lime import LIME
 # import shap

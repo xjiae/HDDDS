@@ -19,7 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from scipy import signal
-
+from models.lstm import StackedLSTM
 from utils import *
 
 N_HIDDENS = 200
@@ -27,72 +27,6 @@ N_LAYERS = 3
 BATCH_SIZE = 2024
 epoch = 130
 num_features = 86
-class StackedLSTM(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.rnn = torch.nn.LSTM(
-            input_size=num_features,
-            hidden_size=N_HIDDENS,
-            num_layers=N_LAYERS,
-            bidirectional=True,
-            dropout=0.1
-        )
-        self.fc = torch.nn.Linear(N_HIDDENS * 2,num_features)
-        self.relu = torch.nn.LeakyReLU(0.1)
-        
-  
-        w = torch.nn.Parameter(torch.FloatTensor([-0.01]), requires_grad=True)
-        w = torch.nn.Parameter(w, requires_grad=True)
-        self.w = w
-        
-        self.sigmoid = torch.nn.Sigmoid()
-        
-
-        self.dense1 = torch.nn.Linear(num_features, num_features//2)
-        self.dense2 = torch.nn.Linear(num_features//2, num_features)
-
-    def forward(self, x):
-        # x = x[:,:,LEAV_IDX] # batch, window_size, params
-
-        pool = torch.nn.AdaptiveAvgPool1d(1)
-        
-        attention_x = x
-        attention_x = attention_x.transpose(1,2) # batch, params, window_size
-        
-        attention = pool(attention_x) # batch, params, 1
-        
-        connection = attention
-        connection = connection.reshape(-1,num_features) # batch, params
-        
-       
-        attention = self.relu(torch.squeeze(attention))
-        attention = self.relu(self.dense1(attention))
-        attention = self.sigmoid(self.dense2(attention)) 
-
-        x = x.transpose(0, 1)  # (batch, window_size, params) -> (window_size, batch, params)
-        self.rnn.flatten_parameters()
-        outs, _ = self.rnn(x)
-        out = self.fc(self.relu(outs[-1])) 
-
-        mix_factor = self.sigmoid(self.w) 
-
-        return mix_factor * connection * attention + out * (1 - mix_factor) 
-
-class LSTMModel(nn.Module):
-    def __init__(self, n_features=86):
-        super(LSTMModel, self).__init__()
-        self.lstm1 = nn.LSTM(input_size=n_features, hidden_size=100, batch_first=True, bidirectional=True)
-        self.lstm2 = nn.LSTM(input_size=200, hidden_size=100, batch_first=True, bidirectional=True)
-        self.lstm3 = nn.LSTM(input_size=200, hidden_size=100, batch_first=True, bidirectional=True)
-        self.dense = nn.Linear(200, n_features)
-
-    def forward(self, inputs):
-        first, _ = self.lstm1(inputs)
-        second, _ = self.lstm2(first)
-        third, _ = self.lstm3(second)
-        lstm_out = self.dense(third)
-        # outputs = lstm_out + aux_input
-        return lstm_out
 
 def train(dataset, model, batch_size, n_epochs):
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -164,8 +98,8 @@ def inference(dataset, model, batch_size):
     ts, dist, att = [], [], []
     with torch.no_grad():
         for batch in tqdm(dataloader):
-            given = batch["given"].cuda()
-            answer = batch["answer"].cuda()
+            given = batch["x"].cuda()
+            answer = batch["y"].cuda()
             guess = model(given)
             ts.append(np.array(batch["ts"]))
             dist.append(torch.abs(answer - guess).cpu().numpy())
@@ -185,7 +119,8 @@ if __name__ == '__main__':
     # model = LSTMModel()
     # model = train(model)
    
-    # train_dataset = get_dataset('hai')
+    # train_dataset = get_dataset('hai')q
+    
 
     # model = StackedLSTM()
     # model = nn.DataParallel(model)
@@ -236,76 +171,4 @@ if __name__ == '__main__':
     
         
 
-    # # Extract features and labels from the testing dataloader
-    # test_features = []
-    # test_labels = []
-    # test_explanations = []
-
-    # # Iterate over the test dataloader
-    # for batch in test_dataloader:
-    #     if cnt == 4:
-    #         break
-    #     # Access the batch data
-    #     features = normalizer.transform(batch[0])  # X
-    #     labels = batch[1]   # y
-    #     explanations = batch[2]  # explanation
-    #     test_features.append(features)
-    #     test_labels.append(labels)
-    #     test_explanations.append(explanations)
-    #     cnt += 1
-
-
-    # train_features = np.vstack(train_features)
-    # test_features = np.vstack(test_features)
-    # test_labels = np.hstack(test_labels)
-
-    # # Predict the labels for the testing data
-    # test_predictions = svm.predict(test_features)
-
-    # test_predictions[np.where(test_predictions==-1)] = 0
-    # # Evaluate the performance of the One-Class SVM
-    # accuracy = accuracy_score(test_labels, test_predictions)
-
-    # # Print the accuracy score
-    # print('Accuracy:', accuracy)
-    # explainer = shap.KernelExplainer(svm.decision_function, train_features[:10])
-    # shap_values = explainer.shap_values(test_features)
-    # test_explanations = np.vstack(test_explanations)
-
-    # test_explanations = normalizer.fit_transform(test_explanations)
-
-
-
-    # # Assuming you have 'shap_values' and 'test_predictions' arrays
-
-    # thresholds = np.linspace(0, 1, num=100)  # Threshold values between 0 and 1
-    # best_threshold = None
-    # best_f1_score = 0.0
-    # mean_fpr = 0.0
-    # mean_fnr = 0.0
-
-    # for i in tqdm(range(len(shap_values))):
-
-    #     row = shap_values[i]
-    #     f1_scores = []
-    #     fprs = []
-    #     fnrs = []
-
-    #     for threshold in thresholds:
-    #         binary_row = threshold_binary(row, threshold)
-    #         f1 = f1_score(test_explanations[i], binary_row)
-    #         f1_scores.append(f1)
-
-    #     best_threshold = thresholds[np.argmax(f1_scores)]
-    #     best_binary_row = threshold_binary(row, best_threshold)
-    #     fpr, fnr = compute_fpr_fnr(test_explanations[i], best_binary_row)
-    #     mean_fpr += fpr
-    #     mean_fnr += fnr
-
-    # mean_fpr /= len(shap_values)
-    # mean_fnr /= len(shap_values)
-
-    # print('Best threshold:', best_threshold)
-    # print('Mean FPR:', mean_fpr)
-    # print('Mean FNR:', mean_fnr)
-    # breakpoint()
+    

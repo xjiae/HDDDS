@@ -14,10 +14,10 @@ print(torch.__version__)
 
 # Our stuff
 
-from mvtec import MVTecDataset
-from swat import SWaTDataset
-from wadi import WADIDataset
-from hai import HAIDataset, HAISlidingDataset
+from dataset.mvtec import MVTecDataset
+from dataset.swat import SWaTDataset
+from dataset.wadi import WADIDataset
+from dataset.hai import HAIDataset, HAISlidingDataset
 
 torch.manual_seed(1234)
 #####

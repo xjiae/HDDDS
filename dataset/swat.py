@@ -13,7 +13,7 @@ class SWaTDataset(torch.utils.data.Dataset):
         
 
     def __getitem__(self, index):
-        return self.data.iloc[index, 1:-1].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
+        return self.data.iloc[index, 1:-1].values.astype(float), self.data.iloc[index, -1], self.explanation.iloc[index, :].values
        
 
     def __len__(self):

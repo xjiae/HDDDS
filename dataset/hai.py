@@ -17,8 +17,13 @@ class HAIDataset(torch.utils.data.Dataset):
     def __init__(self, root=None, all = False, train = False):
         self.all = all
         if all:
-            self.data = pd.read_csv('data/hai/processed.csv')
-            self.explanation = pd.read_csv('data/hai/gt_exp.csv')
+            train_data = pd.read_csv('data/hai/train_processed.csv')
+            test_data = pd.read_csv('data/hai/test_processed.csv')
+            self.data = pd.concat([train_data, test_data])
+            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
+            test_explanation = pd.read_csv('data/hai/test_gt_exp.csv')
+            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+
         else:
             if train:
                 self.data = pd.read_csv('data/hai/train_processed.csv')
@@ -30,11 +35,11 @@ class HAIDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
        
-        if self.all:
-            index = index.item()
-            return self.data.iloc[index, 1:-1].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
-        else:
-            return self.data.iloc[index, 1:-2].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
+        # if self.all:
+        #     # index = index.item()
+        #     return self.data.iloc[index, 1:-1].values, self.data.iloc[index, -2], self.explanation.iloc[index, :].values
+        # else:
+        return self.data.iloc[index, 1:-2].values, self.data.iloc[index, -2], self.explanation.iloc[index, :].values
             
        
 
@@ -43,18 +48,21 @@ class HAIDataset(torch.utils.data.Dataset):
 
 
 class HAISlidingDataset(torch.utils.data.Dataset):
-    def __init__(self, stride=1, attacks=None, train = True):
+    def __init__(self, stride=1, train = True):
         if train:
             df =  pd.read_csv('data/hai/train_processed.csv', index_col=0)
+            self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
         else:
             df = pd.read_csv('data/hai/test_processed.csv', index_col=0)
+            self.explanation = pd.read_csv('data/hai/test_gt_exp.csv')
             attacks = df['label'].values
         
         timestamps = df['epoch']
         self.ts = timestamps.values
+
         
-        df = df.drop(columns=['epoch', 'label'])
-        self.tag_values = np.array(df, dtype=np.float32)
+        df_tag = df.drop(columns=['epoch', 'label'])
+        self.tag_values = np.array(df_tag, dtype=np.float32)
         self.valid_idxs = []
         for L in range(len(self.ts) - WINDOW_SIZE + 1):
             R = L + WINDOW_SIZE - 1
@@ -64,7 +72,8 @@ class HAISlidingDataset(torch.utils.data.Dataset):
         self.n_idxs = len(self.valid_idxs)
         print(f"# of valid windows: {self.n_idxs}")
         if attacks is not None:
-            self.attacks = np.array(attacks, dtype=np.float32)
+            self.attacks = np.array(attacks, dtype=np.int32)
+
             self.with_attack = True
         else:
             self.with_attack = False
@@ -78,10 +87,20 @@ class HAISlidingDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         i = self.valid_idxs[idx]
         last = i + WINDOW_SIZE - 1
-        item = {"attack": self.attacks[last]} if self.with_attack else {}
+        # item = {"attack": self.attacks[last]} if self.with_attack else {}
+        item = {}
+        item['y'] = 0
+        idx = last
+        if 1 in self.attacks[i : i + WINDOW_GIVEN]:
+
+            item['y'] = 1
+            idx = np.where(self.attacks[i : i + WINDOW_GIVEN] == 1)[0][0] + last
+
         item["ts"] = self.ts[i + WINDOW_SIZE - 1]
         item["x"] = torch.from_numpy(self.tag_values[i : i + WINDOW_GIVEN])
-        item["y"] = torch.from_numpy(self.tag_values[last])
+        item["xl"] = torch.from_numpy(self.tag_values[last])
+        item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
+        # breakpoint()
         return item
     
     def get_ts(self):

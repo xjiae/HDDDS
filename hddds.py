@@ -65,9 +65,10 @@ def load_hai_data(ds_name):
     if 'train' in ds_name:
         return HAIDataset(train = True)
     elif 'test' in ds_name:
-        return HAISlidingDataset(train=False)
-    # return HAIDataset(all=True)
-    return HAISlidingDataset()
+        # return HAISlidingDataset(train=False)
+        return HAIDataset(train = False)
+    return HAIDataset(all=True)
+    # return HAISlidingDataset()
 
 def load_cuad_data():
     cuad = None

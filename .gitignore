@@ -163,4 +163,4 @@ data/
 OpenXAI/
 models/LSTM
 *.csv
-
+results/

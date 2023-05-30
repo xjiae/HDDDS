@@ -23,27 +23,26 @@ class LIME:
         self.model = model
         return
 
-    def fit(self, x, ano_class=1):
-        # self.ano_idx = np.where(y == 1)[0]
-        breakpoint()
-        self.ano_idx = list(range(len(x)))
+    def fit(self, x, y, ano_class=1):
+        self.ano_idx = np.where(y == 1)[0]
+        # self.ano_idx = list(range(len(x)))
         ano_idx = self.ano_idx
-        # self.dim = x.shape[1]
+        self.dim = x.shape[1]
         # svm = sklearn.svm.SVC(kernel="rbf", probability=True)
         # svm.fit(x, y)
 
-        # y_pred = svm.predict(x)
+        y_pred = self.model.predict(x)
+        
         # print("Clf model accuracy: [{:.4f}]".format(sklearn.metrics.accuracy_score(y, y_pred)))
 
-        explainer = lime.lime_tabular.LimeTabularExplainer(x.numpy(), discretize_continuous=self.discretize_continuous,discretizer=self.discretizer)
+        explainer = lime.lime_tabular.LimeTabularExplainer(x, discretize_continuous=False,discretizer=self.discretizer)
         ano_f_weights = np.zeros([len(ano_idx), self.dim])
-        breakpoint()
 
-        print(len(ano_idx))
+        # print(len(ano_idx))
 
-        for ii in tqdm(range(len(ano_idx))):
+        for ii in range(len(self.ano_idx)):
             idx = ano_idx[ii]
-            exp = explainer.explain_instance(x[idx], self.model, labels=(ano_class,), num_features=self.dim)
+            exp = explainer.explain_instance(x[idx], self.model.predict_proba, labels=(ano_class,), num_features=self.dim)
             tuples = exp.as_map()[1]
             for tuple in tuples:
                 f_id, weight = tuple

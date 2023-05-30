@@ -158,12 +158,16 @@ if __name__ == '__main__':
     
     
     acc, f1, fpr, fnr = summary(y_true, y_pred)
-    print("-"*100)
-    print(f"fpr: {fpr:.2f}")
-    print(f"fnr: {fnr:.2f}")
-    print(f"acc: {acc:.2f}")
-    print(f"f1: {f1:.2f}")
-    print("-"*100)
+    
+    
+    
+    print(f"& {fpr:.2f} & {fnr:.2f} & {acc:.2f} & {f1:.2f}     \\")
+    # print("-"*100)
+    # print(f"fpr: {fpr:.2f}")
+    # print(f"fnr: {fnr:.2f}")
+    # print(f"acc: {acc:.2f}")
+    # print(f"f1: {f1:.2f}")
+    # print("-"*100)
     
     
     breakpoint()

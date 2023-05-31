@@ -7,17 +7,90 @@ import torch
 import torch.utils.data
 
 class WADIDataset(torch.utils.data.Dataset):
-    def __init__(self, root=None):
-        self.data = pd.read_csv('data/wadi/processed.csv')
-        self.explanation = pd.read_csv('data/wadi/gt_exp.csv')
+    def __init__(self, root=None, all = False, train = False, raw = False):
+        if all:
+            train_data = pd.read_csv('data/wadi/train_processed.csv')
+            test_data = pd.read_csv('data/wadi/test_processed.csv')
+            self.data = pd.concat([train_data, test_data])
+            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
+            test_explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
+            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+        else:
+            if train:
+                self.data = pd.read_csv('data/wadi/train_processed.csv')
+                self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
+            else:
+                self.data = pd.read_csv('data/wadi/test_processed.csv')
+                self.explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
+        if raw:
+            self.data = pd.read_csv('data/wadi/raw.csv')   
+            test_explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
+            train_explanation = pd.DataFrame(np.zeros((self.data.shape[0]-len(test_explanation), test_explanation.shape[1])))
+            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+        self.timestamp = self.data['epoch']
+        self.label = self.data['label']
+     
         
 
     def __getitem__(self, index):
-        return self.data.iloc[index, 1:-1].values, self.data.iloc[index, -1], self.explanation.iloc[index, :].values
+        return self.data.iloc[index, 1:-2].values, self.data.iloc[index, -2], self.explanation.iloc[index, :].values
+            
        
 
     def __len__(self):
         return self.data.shape[0]
+    
+    
+class WADISlidingDataset(torch.utils.data.Dataset):
+    def __init__(self, window_size, stride=1, train = True):
+        if train:
+            df =  pd.read_csv('data/wadi/train_processed.csv', index_col=0)
+            self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
+        else:
+            df = pd.read_csv('data/wadi/test_processed.csv', index_col=0)
+            self.explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
+            attacks = df['label'].values
+        
+      
+        self.ts = df['epoch'].values
+        self.window_size = window_size
+        df_tag = df.drop(columns=['epoch', 'label'])
+        self.tag_values = np.array(df_tag, dtype=np.float32)
+        self.valid_idxs = []
+        for L in range(len(self.ts) - self.window_size + 1):
+            R = L + self.window_size - 1
+            if (self.ts[R]-self.ts[L]) == self.window_size - 1:
+                self.valid_idxs.append(L)
+        self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
+        self.n_idxs = len(self.valid_idxs)
+        print(f"# of valid windows: {self.n_idxs}")
+        if attacks is not None:
+            self.attacks = np.array(attacks, dtype=np.int32)
+            self.with_attack = True
+        else:
+            self.with_attack = False
+    def __len__(self):
+        return self.n_idxs
+
+    def __getitem__(self, idx):
+        i = self.valid_idxs[idx]
+        last = i + self.window_size - 1
+        WINDOW_GIVEN = self.window_size - 1
+        item = {}
+        item['y'] = 0
+        idx = last
+        if 1 in self.attacks[i : i + WINDOW_GIVEN]:
+            item['y'] = 1
+            idx = np.where(self.attacks[i : i + WINDOW_GIVEN] == 1)[0][0] + last
+        item["ts"] = self.ts[i + self.window_size - 1]
+        item["x"] = torch.from_numpy(self.tag_values[i : i + WINDOW_GIVEN])
+        item["xl"] = torch.from_numpy(self.tag_values[last])
+        item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
+        return item
+    
+    def get_ts(self):
+        return self.ts    
+    
 
 # max min(0-1)
 def norm(train, test):
@@ -56,7 +129,7 @@ def downsample(data, labels, down_len):
 
 
 def process_gt():
-    df = pd.read_csv('data/wadi/gt.csv')
+    df = pd.read_csv('../data/wadi/gt.csv')
     # f = lambda x: len(x.iloc[:,0].split(" "))-1
     # df['date'] = df.iloc[:,0].str.split(" ").str[0]
     # df['end_date'] = df.date.astype(str)+' '+ df.iloc[:,1]
@@ -108,7 +181,14 @@ def preprocess(df):
     # Convert combined datetime column to epoch time
     df["epoch"] = combined_datetime.astype('int64')//1e9
     return df
-
+def normalize(df, min, max):
+        ndf = df.copy()
+        for c in df.columns:
+            if min[c] == max[c]:
+                ndf[c] = df[c] - min[c]
+            else:
+                ndf[c] = (df[c] - min[c]) / (max[c] - min[c])
+        return ndf
 def main():
     gt = process_gt()
     # infile = open('../../../data2/xjiae/hddds/wadi/WADI_14days.csv', 'r')
@@ -117,10 +197,10 @@ def main():
     #     print(firstLine)
     #     breakpoint()
 
-    train = pd.read_csv('../../../data2/xjiae/hddds/wadi/WADI_14days.csv', index_col=0, skiprows=4)
+    train = pd.read_csv('../../../../data2/xjiae/hddds/wadi/WADI_14days.csv', index_col=0, skiprows=4)
 
     
-    test = pd.read_csv('../../../data2/xjiae/hddds/wadi/WADI_attackdata.csv', index_col=0)
+    test = pd.read_csv('../../../../data2/xjiae/hddds/wadi/WADI_attackdata.csv', index_col=0)
     
     
     train = preprocess(train)
@@ -128,9 +208,9 @@ def main():
     test = preprocess(test)
     
     all_mask = []
-    for i in tqdm(range(len(train))):
-        mask = np.zeros(train.shape[1]-1)
-        all_mask.append(mask)
+    # for i in tqdm(range(len(train))):
+    #     mask = np.zeros(train.shape[1]-1)
+    #     all_mask.append(mask)
     train_label = np.zeros(train.shape[0])
 
     test_label = []
@@ -140,26 +220,54 @@ def main():
         test_label.append(label)
         all_mask.append(mask)
     
-    test = test.drop(columns = ['epoch'])
-    train = train.drop(columns = ['epoch'])
     
-    train['label'] =  train_label
-    test['label'] = test_label
+    train_df = train.fillna(train.mean())
+    test_df = test.fillna(test.mean())
     
-    combined = pd.concat([train, test])
-    combined.to_csv("data/wadi/processed.csv")
+    test_df['label'] = test_label
+    train_df['label'] = train_label
+    
+    # combined = pd.concat([train_df, test_df])
+    # combined.to_csv("../data/wadi/raw.csv")
+
+    
+    # test = test.drop(columns = ['epoch'])
+    # train = train.drop(columns = ['epoch'])
+    
+    # train['label'] =  train_label
+    # test['label'] = test_label
+    
+    # combined = pd.concat([train, test])
+    # combined.to_csv("data/wadi/processed.csv")
     
     df = pd.DataFrame(all_mask)
-    df.to_csv('data/wadi/gt_exp.csv', index = False)
+    df.to_csv('../data/wadi/test_gt_exp.csv', index = False)
+    # breakpoint()
+    
+
+    train_df = train_df.drop(columns=['label', 'epoch'])
+    test_df = test_df.drop(columns=['label', 'epoch'])
+    
+    min = train_df.min()
+    max = train_df.max()  
+    
+    
+    train_df = normalize(train_df, min, max).ewm(alpha=0.9).mean()
+    test_df = normalize(test_df, min, max).ewm(alpha=0.9).mean()
+    
+    
+    train_df['label'] = train_label
+    train_df['epoch'] = train['epoch']
+    
+    
+    test_df['label'] = test_label
+    test_df['epoch'] = test['epoch']
+        
+    train_df.to_csv("../data/wadi/train_processed.csv")
+    test_df.to_csv("../data/wadi/test_processed.csv")
+    
+    
     breakpoint()
-    
-    
-    
-    
-    
-    # df = pd.DataFrame(all_mask)
-    # df.to_csv('swat_gt_exp.csv', index = False)
-    
         
     
     

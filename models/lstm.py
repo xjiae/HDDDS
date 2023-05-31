@@ -27,6 +27,7 @@ N_LAYERS = 3
 BATCH_SIZE = 2024
 epoch = 130
 num_features = 86
+
 class StackedLSTM(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -51,18 +52,16 @@ class StackedLSTM(torch.nn.Module):
         self.dense1 = torch.nn.Linear(num_features, num_features//2)
         self.dense2 = torch.nn.Linear(num_features//2, num_features)
 
-    def forward(self, x):
+    def forward(self, x, alpha):
         # x = x[:,:,LEAV_IDX] # batch, window_size, params
-
-        pool = torch.nn.AdaptiveAvgPool1d(1)
+        N, W, d = x.shape
+        # print(alpha.shape)
+        x = x * alpha
         
-        attention_x = x
-        attention_x = attention_x.transpose(1,2) # batch, params, window_size
-        
-        attention = pool(attention_x) # batch, params, 1
-        
+        avg_x = x.mean(dim=1).view(N, d, 1)
+        attention = avg_x
         connection = attention
-        connection = connection.reshape(-1,num_features) # batch, params
+        connection = connection.reshape(-1, d) # batch, params
         
        
         attention = self.relu(torch.squeeze(attention))
@@ -75,7 +74,7 @@ class StackedLSTM(torch.nn.Module):
         out = self.fc(self.relu(outs[-1])) 
 
         mix_factor = self.sigmoid(self.w) 
-
+        # return connection
         return mix_factor * connection * attention + out * (1 - mix_factor) 
 
 class LSTMModel(nn.Module):

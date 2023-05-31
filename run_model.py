@@ -21,6 +21,7 @@ import torch.optim as optim
 from scipy import signal
 from models.lstm import StackedLSTM
 from utils import *
+from explainers.intgrad import PlainGradExplainer, IntGradExplainer
 
 N_HIDDENS = 200
 N_LAYERS = 3
@@ -29,29 +30,39 @@ epoch = 130
 num_features = 86
 
 def train(dataset, model, batch_size, n_epochs):
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size)
     optimizer = torch.optim.AdamW(model.parameters())
     loss_fn = torch.nn.MSELoss()
     # epochs = trange(n_epochs, desc="training")
     best = {"loss": sys.float_info.max}
     loss_history = []
+
     for e in tqdm(range(n_epochs)):
         epoch_loss = 0
         for batch in dataloader:
             optimizer.zero_grad()
-            given = batch["given"].cuda()
-            answer = batch["answer"].cuda()
-            guess = model(given)
-            loss = loss_fn(answer[:,], guess) 
+            x = batch["x"].cuda()
+            xl= batch["xl"].cuda()
+            
+            alpha = torch.ones_like(x)
+            
+            
+            y = model(x, alpha)
+            loss = loss_fn(xl, y) 
+
             loss.backward()
             epoch_loss += loss.item()
             optimizer.step()
+            break
+        
         loss_history.append(epoch_loss)
         # epochs.set_postfix_str(f"loss: {epoch_loss:.6f}")
         if epoch_loss < best["loss"]:
             best["state"] = model.state_dict()
             best["loss"] = epoch_loss
             best["epoch"] = e + 1
+        break
+        
     return best, loss_history
 
 def anomaly_detection(anomaly_score, threshold, total_ts):
@@ -94,20 +105,36 @@ def fill_blank(check_ts, labels, total_ts):
 
 
 def inference(dataset, model, batch_size):
-    dataloader = DataLoader(dataset, batch_size=batch_size)
+    dataloader = DataLoader(dataset, batch_size=1)
+    explainer = PlainGradExplainer(0.25)
     ts, dist, att = [], [], []
-    with torch.no_grad():
-        for batch in tqdm(dataloader):
-            given = batch["x"].cuda()
-            answer = batch["y"].cuda()
-            guess = model(given)
-            ts.append(np.array(batch["ts"]))
-            dist.append(torch.abs(answer - guess).cpu().numpy())
+    # with torch.no_grad():
 
-            try:
-                att.append(np.array(batch["attack"]))
-            except:
-                att.append(np.zeros(batch_size))
+    for batch in dataloader:
+    
+        xx = batch["x"].cuda()
+        x = xx.view(xx.shape[1:])
+        y = batch["y"].cuda()
+        
+        alpha = torch.ones_like(xx)
+        guess = model(xx, alpha)
+        if isinstance(model, StackedLSTM):
+            model.train()
+            y, v, test = explainer._find_grad_order(model, x)
+        
+       
+        alpha_pred = explainer.find_explanation(model, x)
+        # torch nn doesn't allow backward in eval mode
+        if isinstance(model, StackedLSTM):
+            model.eval()
+        
+        ts.append(np.array(batch["ts"]))
+        dist.append(torch.abs(y - guess).cpu().numpy())
+
+        try:
+            att.append(np.array(batch["attack"]))
+        except:
+            att.append(np.zeros(batch_size))
             
     return (
         np.concatenate(ts),
@@ -119,18 +146,20 @@ if __name__ == '__main__':
     # model = LSTMModel()
     # model = train(model)
    
-    # train_dataset = get_dataset('hai')q
+    train_dataset = get_dataset('hai_sliding_train_100')
+    
     
 
-    # model = StackedLSTM()
-    # model = nn.DataParallel(model)
+    model = StackedLSTM()
+    # breakpoint()
+    model = nn.DataParallel(model)
     
-    # model.cuda()
-    # model.train()
+    model.cuda()
+    model.train()
     # BEST_MODEL, LOSS_HISTORY = train(train_dataset, model, BATCH_SIZE, epoch) 
     
 
-    # with open("models/LSTM/StackedLSTM.pt", "wb") as f:
+    # with open("models/LSTM/StackedLSTM_alpha.pt", "wb") as f:
     #     torch.save(
     #         {
     #             "state": BEST_MODEL["state"],
@@ -139,15 +168,16 @@ if __name__ == '__main__':
     #         },
     #         f,
     #     )
-    # breakpoint()
-    with open("models/LSTM/StackedLSTM.pt", "rb") as f:
+
+    with open("models/LSTM/StackedLSTM_alpha.pt", "rb") as f:
         SAVED_MODEL = torch.load(f)
 
 
     MODEL = StackedLSTM()
     new = {k.replace('module.',''):v for k,v in SAVED_MODEL["state"].items()}
     MODEL.load_state_dict(new)
-    test_dataset = get_dataset('hai_test')
+    test_dataset = get_dataset('hai_sliding_test_100')
+    
     MODEL.eval().cuda()
     CHECK_TS, CHECK_DIST, CHECK_ATT = inference(test_dataset, MODEL, BATCH_SIZE)  
     ANOMALY_SCORE = np.mean(CHECK_DIST, axis=1)
@@ -155,13 +185,17 @@ if __name__ == '__main__':
     THRESHOLD = 0.008
     y_pred = anomaly_detection(ANOMALY_SCORE, THRESHOLD, test_dataset.get_ts())
     y_true = CHECK_ATT
+
     
     
-    acc, f1, fpr, fnr = summary(y_true, y_pred)
     
     
     
-    print(f"& {fpr:.2f} & {fnr:.2f} & {acc:.2f} & {f1:.2f}     \\")
+    # acc, f1, fpr, fnr = summary(y_true, y_pred)
+    
+    
+    
+    # print(f"& {fpr:.2f} & {fnr:.2f} & {acc:.2f} & {f1:.2f}     \\")
     # print("-"*100)
     # print(f"fpr: {fpr:.2f}")
     # print(f"fnr: {fnr:.2f}")

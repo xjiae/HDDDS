@@ -33,11 +33,14 @@ class MVTecDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         image_file = self.image_files[index]
         image = Image.open(image_file)
+        if image.mode == "L":
+            image = image.convert("RGB")
         image = self.image_transform(image)
         if self.is_train:
             target = torch.zeros([1, image.shape[-2], image.shape[-1]])
-            return image,0, target
+            return image, 0, target
         else:
+            y = 0
             if os.path.dirname(image_file).endswith("good"):
                 target = torch.zeros([1, image.shape[-2], image.shape[-1]])
             else:
@@ -47,7 +50,8 @@ class MVTecDataset(torch.utils.data.Dataset):
                     )
                 )
                 target = self.target_transform(target)
-            return image,1, target
+                y = 1
+            return image, y, target
 
     def __len__(self):
         return len(self.image_files)

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # List of dataset names
-dataset_names=("swat" "wadi")
+dataset_names=("swat_all" "wadi_all")
 
 # List of models
-models=("LR")
+models=("LR" "SVM")
 
 # List of explainers
 explainers=("SHAP" "LIME")

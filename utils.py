@@ -18,8 +18,6 @@ def summary(y_true, y_pred, score = True):
     if score:
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
         f1_scores = 2*recall*precision/(recall+precision)
-        # weights = confusion_matrix(y_true, y_pred).sum(axis=1)
-        # weighted_f1_scores = np.average(f1_scores, weights=weights)
         threshold = thresholds[np.argmax(f1_scores)]
         
         
@@ -28,15 +26,7 @@ def summary(y_true, y_pred, score = True):
     acc = accuracy_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred, average='weighted')
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    
-    
     fpr = fp / (fp + tn)
     fnr = fn / (fn + tp)
-    # print("-"*100)
-    # print(f"fpr: {fpr:.2f}")
-    # print(f"fnr: {fnr:.2f}")
-    # print(f"acc: {acc:.2f}")
-    # print(f"f1: {f1:.2f}")
-    # print("-"*100)
     print(f"& {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\")
     return acc, f1, fpr, fnr

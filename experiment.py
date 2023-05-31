@@ -13,23 +13,12 @@ import argparse
 from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import MinMaxScaler
 import sklearn
-# import shap
-# from openxai import Explainer
-def threshold_array(arr, threshold):
-    # Create a copy of the input array
-    transformed_arr = np.copy(arr)
-    
-    # Set values larger than the threshold to 1, and all others to 0
-    transformed_arr[transformed_arr > threshold] = 1
-    transformed_arr[transformed_arr <= threshold] = 0
-    
-    return transformed_arr
-
+from sklearn.model_selection import train_test_split
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-ds_name", type=str, default="swat")
-    parser.add_argument("-model", type=str, default="SVM")
-    parser.add_argument("-explainer", type=str, default="LIME")
+    parser.add_argument("-ds_name", type=str, default="hai_all")
+    parser.add_argument("-model", type=str, default="LR")
+    parser.add_argument("-explainer", type=str, default="SHAP")
     args, unknown = parser.parse_known_args()
     return args
     
@@ -47,26 +36,27 @@ def main(args):
     
     
     dataset = get_dataset(ds_name)
-    # breakpoint()
+    labels = dataset.label
+
     # Split the dataset into train and test sets
-    train_size = int(0.5 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+    # Perform stratified train-test split on the labels
+    indices_train, indices_test = train_test_split(range(len(dataset)), test_size=0.2, stratify=labels, random_state=42)
+
+   # Create Subset objects for train and test sets
+    train_dataset = torch.utils.data.Subset(dataset, indices_train)
+    test_dataset = torch.utils.data.Subset(dataset, indices_test)
     
     # Create train and test dataloaders
 
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
         
-    # train_dataset = get_dataset('hat_train')
-    # test_dataset = get_dataset('hai_test')
-    # train_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
-    # test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
-    
-     # model
-    # model = OneClassSVM(gamma='auto')
-    # model = sklearn.svm.SVC(kernel="rbf", probability=True)
-    model = sklearn.linear_model.LogisticRegression(random_state=0)
+         
+    # model
+    if model_name == "SVM":
+        model = sklearn.svm.SVC(kernel="rbf", probability=True)
+    elif model_name == "LR":
+        model = sklearn.linear_model.LogisticRegression(random_state=0)
     scaler = MinMaxScaler()
 
     print("training....")
@@ -99,7 +89,6 @@ def main(args):
         y_pred = model.predict(x)
         y_trues.append(y)
         y_preds.append(y_pred)
-        # a_pred = threshold_array(a_pred, np.quantile(a_pred.flatten(), 0.95))
     
         if len(a_pred) > 0:
             a_true = a.cpu().numpy()[exp_model.ano_idx]
@@ -125,30 +114,6 @@ def main(args):
     f.write(f"{model_name} | {explainer} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\ \n")
     f.close()
     
-    
-    # breakpoint()
-    
-    # with open("models/LSTM/StackedLSTM.pt", "rb") as f:
-    #         SAVED_MODEL = torch.load(f)
-
-    # # load 
-    # model = StackedLSTM()
-    # new = {k.replace('module.',''):v for k,v in SAVED_MODEL["state"].items()}
-    # model.load_state_dict(new)
-    # 
-    # model.eval().cuda()
-    # model =  nn.DataParallel(model)
-    
-    # shap = GradShapExplainer(top_k_frac=0.25) 
-    # a_pred = intgrad.get_explanation(x, y)
-    # a_pred = intgrad.fit(x, y)
-
-    # exp = shap.find_explanation(model, x)
-    
-    # breakpoint()    
-    
-    # e = shap.DeepExplainer(model, background)
-    # shap_values = e.shap_values(test_images)
 
         
 

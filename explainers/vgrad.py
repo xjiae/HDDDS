@@ -11,7 +11,7 @@ class VGradExplainer(Explainer):
 
   def get_explanation(self, model, x):
     assert isinstance(model, nn.Module)
-    assert len(model.out_shape) == 1 # Classification model
+    # assert len(model.out_shape) == 1 # Classification model
     
     if not self.is_batched:
       x = x.unsqueeze(0)

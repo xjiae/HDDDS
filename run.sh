@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # List of dataset names
-dataset_names=("swat_all" "wadi_all")
+dataset_names=("hai_all")
 
 # List of models
-models=("LR" "SVM")
+models=("LR")
 
 # List of explainers
-explainers=("SHAP" "LIME")
+explainers=("SHAP")
 
 # Nested for loops to iterate over all combinations
 for ds_name in "${dataset_names[@]}"

@@ -34,7 +34,7 @@ class SimpleNet(nn.Module):
   def forward(self, x, w=None):
     w = torch.ones_like(x) if w is None else w
     assert x.shape == w.shape
-    N = x.size(0)
+    N = x.size(0) # N is batch dim
     x = self.norm1(x.view(N,1,self.in_dim))
     w = w.view(N,1,self.in_dim)
     z = torch.cat([x, w], dim=1)
@@ -64,7 +64,8 @@ class SimpleLSTM(nn.Module):
     assert x.shape == w.shape
     assert x.shape[2:] == self.in_shape
     N, L = x.shape[0:2]
-    z = torch.cat([x.flatten(2), w.flatten(2)], dim=2) # (N,L,2*d)
+    z = torch.cat([x.flatten(2), w.flatten(2)], dim=2).type(torch.DoubleTensor).cuda() # (N,L,2*d)
+    # breakpoint()
     z, _ = self.lstm1(z)
     z, _ = self.lstm2(z)
     z, _ = self.lstm3(z)

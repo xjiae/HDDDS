@@ -77,6 +77,7 @@ class HAISlidingDataset(torch.utils.data.Dataset):
         self.n_idxs = len(self.valid_idxs)
         print(f"# of valid windows: {self.n_idxs}")
         self.labels = df['label']
+        self.num_features = df.shape[1] - 2
             
     def __len__(self):
         return self.n_idxs
@@ -94,7 +95,9 @@ class HAISlidingDataset(torch.utils.data.Dataset):
         item["ts"] = self.ts[i + self.window_size - 1]
         item["x"] = torch.from_numpy(self.tag_values[i : i + WINDOW_GIVEN])
         item["xl"] = torch.from_numpy(self.tag_values[last])
-        item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
+        # item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
+        item['exp'] = torch.from_numpy(self.explanation.iloc[i : i + WINDOW_GIVEN].values)
+        
         return item
     
     def get_ts(self):

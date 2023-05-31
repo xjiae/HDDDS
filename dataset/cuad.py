@@ -15,6 +15,15 @@ from transformers.data.processors.squad import SquadResult, SquadV1Processor, Sq
 import torch.utils.data as tud
 
 # Adapted from: https://github.com/TheAtticusProject/cuad/blob/main/train.py
+# Light wrapper around a TensorDataset where elements are 8-tuples of:
+#   index 0: input_ids
+#   index 1: attention_masks
+#   index 2: token_type_ids
+#   index 3: start_positions
+#   index 4: end_positions
+#   index 5: cls_index
+#   index 6: p_mask
+#   index 7: is_impossible
 class CuadDataset(tud.Dataset):
   def __init__(self,
                tokenizer_or_name, # Need to supply the name of the classifier
@@ -23,10 +32,9 @@ class CuadDataset(tud.Dataset):
                max_query_len = 64,
                doc_stride = 128,
                data_dir = "data/cuad",
-               train_filename = "train_small.json",
+               train_filename = "train.json",
                eval_filename = "test.json",
                cache_dir = "data/cuad/cache",
-               loading_threads = 2,
                overwrite_cache = False,
                is_train = True,
                seed = 1234):
@@ -81,8 +89,7 @@ class CuadDataset(tud.Dataset):
                                   is_train,
                                   max_seq_len,
                                   max_query_len,
-                                  doc_stride,
-                                  loading_threads)
+                                  doc_stride)
       torch.save(self.dataset, self.cache_file)
       print("cached to {self.cache_file}")
 
@@ -90,20 +97,20 @@ class CuadDataset(tud.Dataset):
     item = self.dataset[idx]
 
     '''
-        inputs = {
-            "input_ids": batch[0],
-            "attention_mask": batch[1],
-            "token_type_ids": batch[2],
-            "start_positions": batch[3],
-            "end_positions": batch[4],
-        }]
+    inputs = {
+        "input_ids": batch[0],
+        "attention_mask": batch[1],
+        "token_type_ids": batch[2],
+        "start_positions": batch[3],
+        "end_positions": batch[4],
+    }]
 
-        inputs = {
-            "input_ids": batch[0],
-            "attention_mask": batch[1],
-            "token_type_ids": batch[2],
-        }
-      '''
+    inputs = {
+        "input_ids": batch[0],
+        "attention_mask": batch[1],
+        "token_type_ids": batch[2],
+    }
+    '''
     return item
 
   
@@ -111,7 +118,7 @@ class CuadDataset(tud.Dataset):
     return len(self.dataset)
 
 
-def load_dataset(tokenizer, data_dir, filename, is_train, max_seq_len, max_query_len, doc_stride, threads):
+def load_dataset(tokenizer, data_dir, filename, is_train, max_seq_len, max_query_len, doc_stride):
     processor = SquadV1Processor()
     if is_train:
         examples = processor.get_train_examples(data_dir, filename=filename)
@@ -124,9 +131,7 @@ def load_dataset(tokenizer, data_dir, filename, is_train, max_seq_len, max_query
         doc_stride = doc_stride,
         max_query_length = max_query_len,
         is_training = is_train,
-        return_dataset = "pt",
-        threads = threads,
-    )
+        return_dataset = "pt")
 
     if is_train:
       return get_balanced_dataset(dataset)

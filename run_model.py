@@ -12,7 +12,7 @@ from utils import *
 import warnings
 # warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 warnings.filterwarnings("ignore")
-
+import gc
 from tqdm.notebook import trange
 import torch
 import torch.nn as nn
@@ -140,13 +140,14 @@ def inference(dataset, model, batch_size):
         
         # if isinstance(model, SimpleLSTM):
         model.eval()
-        torch.cuda.empty_cache()
+        
         # ts.append(np.array(batch["ts"]))
         y_true.append(y.cpu())
-        # dist.append(torch.abs(y - guess).cpu().numpy())
         y_pred.append(y_p.max().cpu())
         w_true.append(batch["exp"][0].cpu())
         w_pred.append(w_p.cpu())
+        gc.collect()
+        torch.cuda.empty_cache()
         
         # breakpoint()
 

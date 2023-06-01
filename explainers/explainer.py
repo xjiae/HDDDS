@@ -23,9 +23,7 @@ class TopKR2B(Real2BinaryMethod):
     assert k >= 1
 
   def to_binary(self, w):
-    # breakpoint()
-    # assert w.shape[1:] == self.shape
-    assert w.shape[2:] == self.shape
+    assert w.shape[1:] == self.shape
     w = w.view(-1, self.dim)
     hot_inds = w.sort(dim=1, descending=True).indices[:,:self.k]
     b = torch.zeros_like(w)

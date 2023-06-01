@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 
 from .explainer import *
 
@@ -10,8 +9,7 @@ class VGradExplainer(Explainer):
     self.r2b_method = r2b_method
 
   def get_explanation(self, model, x):
-    assert isinstance(model, nn.Module)
-    # assert len(model.out_shape) == 1 # Classification model
+    assert len(model.out_shape) == 1 # Classification model
     
     if not self.is_batched:
       x = x.unsqueeze(0)
@@ -21,10 +19,8 @@ class VGradExplainer(Explainer):
     w.requires_grad_()
     y = model(x, w=w)
     v, _ = y.max(dim=1)
-
-    # Take gradients
-    for vi in v:
-      vi.backward(retain_graph=True)
+    s = v.sum()
+    s.backward()
 
     grad = w.grad if self.is_signed else w.grad.abs()
     b = self.r2b_method(grad)

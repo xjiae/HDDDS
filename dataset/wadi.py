@@ -45,7 +45,7 @@ class WADISlidingDataset(torch.utils.data.Dataset):
     def __init__(self, window_size, stride=1, train = True):
         if train:
             df =  pd.read_csv('data/wadi/train_processed.csv', index_col=0)
-            self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
+            self.explanation = pd.DataFrame(np.zeros((df.shape[0], df.shape[1]-2)))
         else:
             df = pd.read_csv('data/wadi/test_processed.csv', index_col=0)
             self.explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
@@ -64,11 +64,8 @@ class WADISlidingDataset(torch.utils.data.Dataset):
         self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
         self.n_idxs = len(self.valid_idxs)
         print(f"# of valid windows: {self.n_idxs}")
-        if attacks is not None:
-            self.attacks = np.array(attacks, dtype=np.int32)
-            self.with_attack = True
-        else:
-            self.with_attack = False
+        self.labels = df['label']
+        self.num_features = df.shape[1] - 2
     def __len__(self):
         return self.n_idxs
 
@@ -79,13 +76,14 @@ class WADISlidingDataset(torch.utils.data.Dataset):
         item = {}
         item['y'] = 0
         idx = last
-        if 1 in self.attacks[i : i + WINDOW_GIVEN]:
+        if 1 in self.labels[i : i + WINDOW_GIVEN].values:
             item['y'] = 1
-            idx = np.where(self.attacks[i : i + WINDOW_GIVEN] == 1)[0][0] + last
+            idx = np.where(self.labels[i : i + WINDOW_GIVEN] == 1)[0][0] + last
         item["ts"] = self.ts[i + self.window_size - 1]
         item["x"] = torch.from_numpy(self.tag_values[i : i + WINDOW_GIVEN])
         item["xl"] = torch.from_numpy(self.tag_values[last])
-        item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
+        # item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
+        item['exp'] = torch.from_numpy(self.explanation.iloc[i : i + WINDOW_GIVEN].values)
         return item
     
     def get_ts(self):

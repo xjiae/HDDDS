@@ -54,21 +54,25 @@ def load_mvtec_data(category, seed=None):
     # return trains, vals, train_loader, val_loader
     return concats
 
-def load_swat_data(ds_name, sliding = False):
+def load_swat_data(ds_name):
     train = 'train' in ds_name
     raw = 'raw' in ds_name
     all = 'all' in ds_name
+    sliding = 'sliding' in ds_name
     if sliding:
-        return SWaTSlidingDataset(train = train)
+        window_size = get_window(ds_name)
+        return SWaTSlidingDataset(window_size, train = train)
     else:
         return SWaTDataset(all = all, train = train, raw=raw)
     
-def load_wadi_data(ds_name, sliding = False):
+def load_wadi_data(ds_name):
     train = 'train' in ds_name
     raw = 'raw' in ds_name
     all = 'all' in ds_name
+    sliding = 'sliding' in ds_name
     if sliding:
-        return WADISlidingDataset(train = train)
+        window_size = get_window(ds_name)
+        return WADISlidingDataset(window_size, train = train)
     else:
         return WADIDataset(all = all, train = train, raw=raw)
 

@@ -48,8 +48,12 @@ class SimpleNet(XwModel):
     z = self.convs(z)   # (N,linear_dim)
     z = self.norm2(z)
     z = self.linears(z) # (N,out_dim)
-    return z.view(N,*self.out_shape)
 
+    # If it's classification we do a normalization
+    if len(self.out_shape) == 1:
+      return z.softmax(dim=1)
+    else:
+      return z.view(N,*self.out_shape)
 
 # A simple LSTM implementation
 class SimpleLSTM(XwModel):

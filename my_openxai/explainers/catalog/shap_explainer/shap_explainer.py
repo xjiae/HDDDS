@@ -38,6 +38,7 @@ class SHAPExplainer(BaseExplainer):
         :return: SHAP values [dim (shap_vals) == dim (data_x)]
         '''
         
+        N, x_shape = data_x.size(0), data_x.shape[1:]
         data_x = data_x.numpy()
         
         if self.domain == 'non_deep':
@@ -45,7 +46,7 @@ class SHAPExplainer(BaseExplainer):
             shap_vals = self.explainer.shap_values(data_x)[1]
         elif self.domain == 'deep':
             shap_vals = self.explainer.shap_values(data_x)
-        return torch.FloatTensor(shap_vals)
+        return torch.FloatTensor(shap_vals).view(N, *x_shape)
 
 
 

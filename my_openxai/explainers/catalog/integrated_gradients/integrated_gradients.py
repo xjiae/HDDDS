@@ -33,8 +33,11 @@ class IntegratedGradients(Explainer):
         self.model.eval()
         self.model.zero_grad()
 
+        N, x_shape = x.size(0), x.shape[1:]
+        x = x.view(N,-1)
+
         ig = IG_Captum(self.model, self.multiply_by_inputs)
 
         attribution = ig.attribute(x, target=label, method=self.method, baselines=self.baseline)
 
-        return attribution
+        return attribution.view(N, *x_shape)

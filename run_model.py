@@ -75,17 +75,21 @@ def inference(dataset, model, batch_size, explainer):
     for batch in tqdm(dataloader):
         # cnt += 1
         # if cnt == 3:
-        #     breakpoint()
+            # breakpoint()
         x = batch["x"]
         y = batch["y"]
+      
         x_to_explain = x[0]
-        w_train = torch.stack([torch.zeros_like(x_to_explain)] * 100)
+        # w_train = torch.stack([torch.zeros_like(x_to_explain)] * 100)
+        # x_train = torch.stack([torch.rand(x_to_explain.shape)] * 100)
+        x_train = x_to_explain + torch.rand(100, *x_to_explain.shape)
         
+        # x_train = torch.rand(x.shape)
        
         if explainer == "LIME":
-            explainer = Explainer(method="lime", model=XWrapper(model, x_to_explain), dataset_tensor=w_train)
+            explainer = Explainer(method="lime", model=model, dataset_tensor=x_train)
         elif explainer == " SHAP":
-            explainer = Explainer(method="shap", model=XWrapper(model, x_to_explain), dataset_tensor=w_train)
+            explainer = Explainer(method="shap", model=model, dataset_tensor=x_train)
             
         
         
@@ -93,12 +97,13 @@ def inference(dataset, model, batch_size, explainer):
         model.train()   
         # lbl_test = torch.randint(0,10, (batch_size,))  
         # w_test = torch.ones(x.shape)        
-        w_p = explainer.get_explanation(model, x)  
-        # w_p = explainer.get_explanation(w_test, lbl_test)  
+        # w_p = explainer.get_explanation(model, x)  
+        w_p = explainer.get_explanation(x_to_explain.unsqueeze(0), y.view(1,1))  
         model.eval()
         y_p = model(x)
         y_true.append(y.cpu())
-        y_pred.append(torch.max(y_p.detach().cpu(), dim=1)[0])
+        # y_pred.append(torch.max(y_p.detach().cpu(), dim=1)[0])
+        y_pred.append(torch.max(y_p.detach().cpu()).view(1,1))
         w_true.append(batch["exp"].cpu().view(w_p.shape))
         w_pred.append(w_p.detach().cpu())   
     return (

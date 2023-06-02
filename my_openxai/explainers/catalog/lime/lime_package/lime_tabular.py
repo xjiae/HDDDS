@@ -393,7 +393,7 @@ class LimeTabularExplainer(object):
                 else:
                     self.class_names = list(self.class_names)
                 # if not np.allclose(yss.sum(axis=1), 1.0):
-                if not torch.allclose(yss.sum(dim=1).float(), torch.ones(yss.size(0)).cuda()):
+                if not torch.allclose(yss.sum(dim=1).float(), torch.ones(yss.size(0)).to(yss.device)):
                 
                     warnings.warn("""
                     Prediction probabilties do not sum to 1, and

@@ -58,7 +58,7 @@ class SimpleNet(XwModel):
 
 # A simple LSTM implementation
 class SimpleLSTM(XwModel):
-  def __init__(self, in_shape, out_shape, hidden_dim=128, auto_reshape=True):
+  def __init__(self, in_shape, out_shape, hidden_dim=128, auto_reshape=True, return_mode="last"):
     super(SimpleLSTM, self).__init__(in_shape, out_shape)
     self.hidden_dim = hidden_dim
     self.lstm1 = nn.LSTM(input_size=2*self.in_dim, hidden_size=hidden_dim, batch_first=True)
@@ -66,6 +66,7 @@ class SimpleLSTM(XwModel):
     self.lstm3 = nn.LSTM(input_size=hidden_dim, hidden_size=hidden_dim, batch_first=True)
     self.linear = nn.Linear(hidden_dim, self.out_dim)
     self.auto_reshape = auto_reshape
+    self.return_mode = return_mode
 
   def forward(self, x, w=None):
     x = x.view(x.size(0), -1, *self.in_shape) if self.auto_reshape else x
@@ -73,12 +74,19 @@ class SimpleLSTM(XwModel):
     assert x.shape == w.shape
     assert x.shape[2:] == self.in_shape
     N, L = x.shape[0:2]
-    z = torch.cat([x.flatten(2), w.flatten(2)], dim=2).type(torch.DoubleTensor).cuda() # (N,L,2*d)
+    z = torch.cat([x.flatten(2), w.flatten(2)], dim=2).type(torch.DoubleTensor) # (N,L,2*d)
     z, _ = self.lstm1(z)
     z, _ = self.lstm2(z)
     z, _ = self.lstm3(z)
     z = self.linear(z)
-    return z.view(N,L,*self.out_shape).squeeze()
+
+    if self.return_mode == "last":
+      z = z.view(N,L,*self.out_shape)
+      return z[:,-1]
+    elif self.return_mode == "all":
+      return z.view(N,L,*self.out_shape)
+    else:
+      raise NotImplementedError()
 
 
 # Use this to explain one single x (no batch!)

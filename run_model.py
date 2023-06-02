@@ -20,11 +20,13 @@ import torch.optim as optim
 from scipy import signal
 from models.lstm import StackedLSTM
 from utils import *
-from explainers import *
+from explainers.intgrad import IntGradExplainer
+from explainers.explainer import TopKR2B
 from models import *
 from sklearn.model_selection import train_test_split
 import pynvml
 from pynvml.smi import nvidia_smi
+from my_openxai import Explainer
 pynvml.nvmlInit()
 torch.manual_seed(1234)
 
@@ -62,19 +64,39 @@ def inference(dataset, model, batch_size, explainer):
     dataloader = DataLoader(dataset, batch_size=batch_size)
     k = 10
     if explainer == "VG":
-        explainer = VGradExplainer(is_batched=True, r2b_method=TopKR2B(model.in_shape, k))
-    else:
+            # explainer = VGradExplainer(is_batched=True, r2b_method=TopKR2B(model.in_shape, k))
+        explainer = Explainer(method="grad", model=XWrapper(model, x_to_explain))
+    elif explainer == 'IG':
+        # explainer = Explainer(method="ig", model=XWrapper(model, x_to_explain), dataset_tensor=w_train)
         explainer = IntGradExplainer(is_batched=True, num_steps=20, r2b_method=TopKR2B(model.in_shape, k))
     model = nn.DataParallel(model)
     y_true, y_pred, w_true, w_pred = [], [], [], []
+    # cnt = 0
     for batch in tqdm(dataloader):
-        x = batch["x"].cuda()
-        y = batch["y"].cuda()
-        y_p = model(x)
+        # cnt += 1
+        # if cnt == 3:
+        #     breakpoint()
+        x = batch["x"]
+        y = batch["y"]
+        x_to_explain = x[0]
+        w_train = torch.stack([torch.zeros_like(x_to_explain)] * 100)
+        
+       
+        if explainer == "LIME":
+            explainer = Explainer(method="lime", model=XWrapper(model, x_to_explain), dataset_tensor=w_train)
+        elif explainer == " SHAP":
+            explainer = Explainer(method="shap", model=XWrapper(model, x_to_explain), dataset_tensor=w_train)
+            
+        
+        
         # torch nn.LSTM doesn't allow backward in eval mode, so we make it train briefly
-        model.train()             
-        w_p = explainer.get_explanation(model, x)       
+        model.train()   
+        # lbl_test = torch.randint(0,10, (batch_size,))  
+        # w_test = torch.ones(x.shape)        
+        w_p = explainer.get_explanation(model, x)  
+        # w_p = explainer.get_explanation(w_test, lbl_test)  
         model.eval()
+        y_p = model(x)
         y_true.append(y.cpu())
         y_pred.append(torch.max(y_p.detach().cpu(), dim=1)[0])
         w_true.append(batch["exp"].cpu().view(w_p.shape))
@@ -113,13 +135,15 @@ def main(args):
     sample = False
     
     test_dataset = get_dataset(ds_name_test)
+    d = test_dataset.num_features
     # too expensive to compute the whole dataset
     if explainer == "LIME" or explainer == "SHAP":
-        _, indices = train_test_split(range(len(test_dataset)), test_size=2000, stratify=test_dataset.labels, random_state=args.seed)
-        test_dataset = torch.utils.data.Subset(dataset, indices)
+        _, indices = train_test_split(range(len(test_dataset)), test_size=200, stratify=test_dataset.y, random_state=args.seed)
+        test_dataset = torch.utils.data.Subset(test_dataset, indices)
+        # breakpoint()
 
 
-    d = test_dataset.num_features
+    
     if args.test_only == 0:
     
         train_dataset = get_dataset(ds_name_train)

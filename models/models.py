@@ -67,7 +67,6 @@ class SimpleLSTM(XwModel):
     assert x.shape[2:] == self.in_shape
     N, L = x.shape[0:2]
     z = torch.cat([x.flatten(2), w.flatten(2)], dim=2).type(torch.DoubleTensor).cuda() # (N,L,2*d)
-    # breakpoint()
     z, _ = self.lstm1(z)
     z, _ = self.lstm2(z)
     z, _ = self.lstm3(z)
@@ -79,23 +78,23 @@ class SimpleLSTM(XwModel):
 class XWrapper(nn.Module):
   def __init__(self, model, x, auto_reshape=True):
     super(XWrapper, self).__init__()
-    assert isinstance(model, XwModel)
-    assert model.in_shape == x.shape
+    # assert isinstance(model, XwModel)
+    # assert model.in_shape == x.shape
     self.model = model
     self.x = x
     self.auto_reshape = auto_reshape
   
   def forward(self, w):
     N = w.size(0)
-    w = w.view(N, *self.model.in_shape) if self.auto_reshape else w
-    assert w.shape[1:] == self.model.in_shape
+    # w = w.view(N, *self.model.in_shape) if self.auto_reshape else w
+    w = w.view(N, *self.x.shape) if self.auto_reshape else w
+    # assert w.shape[2:] == self.model.in_shape
     x = torch.stack(N * [self.x])
     y = self.model(x, w)
-
     # Check if the probablities sum to 1
     if y.ndim == 2 and not torch.allclose(y.sum(dim=1), torch.ones(y.size(0))):
       return y.softmax(dim=1)
     else:
-      return y
+      return y.squeeze()
 
 

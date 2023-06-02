@@ -11,6 +11,8 @@ from hddds import *
 
 snet = SimpleNet(in_shape=(3,24,24), out_shape=(10,))
 
+
+
 x_to_explain = torch.rand(3,24,24)
 
 grad_explainer = Explainer(method="grad", model=XWrapper(snet, x_to_explain))

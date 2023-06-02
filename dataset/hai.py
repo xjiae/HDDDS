@@ -65,18 +65,25 @@ class HAISlidingDataset(torch.utils.data.Dataset):
         
       
         self.ts = df['epoch'].values
+        self.labels = df['label']
         self.window_size = window_size
         df_tag = df.drop(columns=['epoch', 'label'])
         self.tag_values = np.array(df_tag, dtype=np.float32)
         self.valid_idxs = []
+        self.y = []
         for L in range(len(self.ts) - self.window_size + 1):
             R = L + self.window_size - 1
             if (self.ts[R]-self.ts[L]) == self.window_size - 1:
                 self.valid_idxs.append(L)
+                if 1 in self.labels[L : L + self.window_size - 1].values:
+                    self.y.append(1)
+                else:
+                    self.y.append(0)
+                
         self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
         self.n_idxs = len(self.valid_idxs)
         print(f"# of valid windows: {self.n_idxs}")
-        self.labels = df['label']
+        
         self.num_features = df.shape[1] - 2
             
     def __len__(self):
@@ -87,11 +94,11 @@ class HAISlidingDataset(torch.utils.data.Dataset):
         last = i + self.window_size - 1
         WINDOW_GIVEN = self.window_size - 1
         item = {}
-        item['y'] = 0
-        idx = last
-        if 1 in self.labels[i : i + WINDOW_GIVEN].values:
-            item['y'] = 1
-            idx = np.where(self.labels[i : i + WINDOW_GIVEN] == 1)[0][0] + last
+        item['y'] = self.y[idx]
+        # idx = last
+        # if 1 in self.labels[i : i + WINDOW_GIVEN].values:
+        #     item['y'] = 1
+        #     idx = np.where(self.labels[i : i + WINDOW_GIVEN] == 1)[0][0] + last
         item["ts"] = self.ts[i + self.window_size - 1]
         item["x"] = torch.from_numpy(self.tag_values[i : i + WINDOW_GIVEN])
         item["xl"] = torch.from_numpy(self.tag_values[last])

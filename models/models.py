@@ -85,6 +85,11 @@ class SimpleLSTM(XwModel):
       return z[:,-1]
     elif self.return_mode == "all":
       return z.view(N,L,*self.out_shape)
+    elif self.return_mode == "prob":
+      z = z.view(N,L,*self.out_shape)
+      ll = z[:, -1]
+      rr = 1 - z[:, -1]
+      return torch.hstack((ll, rr))
     else:
       raise NotImplementedError()
 

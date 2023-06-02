@@ -79,13 +79,8 @@ def inference(dataset, model, batch_size, exp):
         x = batch["x"].cuda()
         y = batch["y"].cuda()
       
-        x_to_explain = x[0]
-        # w_train = torch.stack([torch.zeros_like(x_to_explain)] * 100)
-        # x_train = torch.stack([torch.rand(x_to_explain.shape)] * 100)
-        x_train = x_to_explain + torch.rand(100, *x_to_explain.shape).cuda()
-        # x_train = x_train
-        
-        # x_train = torch.rand(x.shape)
+        x_to_explain = x[0].cpu()
+        x_train = x_to_explain + torch.rand(100, *x_to_explain.shape)
        
         if exp == "LIME":
             explainer = Explainer(method="lime", model=model, dataset_tensor=x_train)
@@ -96,13 +91,10 @@ def inference(dataset, model, batch_size, exp):
         
         # torch nn.LSTM doesn't allow backward in eval mode, so we make it train briefly
         model.train()   
-        # lbl_test = torch.randint(0,10, (batch_size,))  
-        # w_test = torch.ones(x.shape)    
         if "G" in exp:
             w_p = explainer.get_explanation(model, x)  
         else:
-            # x_to_explain = x_to_explain.cuda()
-            y_test = y.view(1,1)
+            y_test = y.view(1,1).cpu()
             w_p = explainer.get_explanation(x_to_explain.unsqueeze(0), y_test)  
         model.eval()
         y_p = model(x)
@@ -146,6 +138,8 @@ def main(args):
     model_name = args.model
     explainer = args.exp
     sample = False
+    mode = "last"
+    
     
     test_dataset = get_dataset(ds_name_test)
     d = test_dataset.num_features
@@ -153,6 +147,7 @@ def main(args):
     if explainer == "LIME" or explainer == "SHAP":
         _, indices = train_test_split(range(len(test_dataset)), test_size=200, stratify=test_dataset.y, random_state=args.seed)
         test_dataset = torch.utils.data.Subset(test_dataset, indices)
+        mode = "prob"
         # breakpoint()
 
 
@@ -185,7 +180,7 @@ def main(args):
         SAVED_MODEL = torch.load(f)
 
 
-    loaded_model = SimpleLSTM(in_shape = (d,), out_shape = (1,)).double()
+    loaded_model = SimpleLSTM(in_shape = (d,), out_shape = (1,), return_mode=mode).double()
     
     new = {k.replace('module.',''):v for k,v in SAVED_MODEL["state"].items()}
     loaded_model.load_state_dict(new)

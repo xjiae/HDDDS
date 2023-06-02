@@ -60,13 +60,13 @@ def train(dataset, model, batch_size, n_epochs):
     return best, loss_history
 
 
-def inference(dataset, model, batch_size, explainer):
+def inference(dataset, model, batch_size, exp):
     dataloader = DataLoader(dataset, batch_size=batch_size)
     k = 10
-    if explainer == "VG":
+    if exp == "VG":
             # explainer = VGradExplainer(is_batched=True, r2b_method=TopKR2B(model.in_shape, k))
         explainer = Explainer(method="grad", model=XWrapper(model, x_to_explain))
-    elif explainer == 'IG':
+    elif exp == 'IG':
         # explainer = Explainer(method="ig", model=XWrapper(model, x_to_explain), dataset_tensor=w_train)
         explainer = IntGradExplainer(is_batched=True, num_steps=20, r2b_method=TopKR2B(model.in_shape, k))
     model = nn.DataParallel(model)
@@ -76,19 +76,20 @@ def inference(dataset, model, batch_size, explainer):
         # cnt += 1
         # if cnt == 3:
             # breakpoint()
-        x = batch["x"]
-        y = batch["y"]
+        x = batch["x"].cuda()
+        y = batch["y"].cuda()
       
         x_to_explain = x[0]
         # w_train = torch.stack([torch.zeros_like(x_to_explain)] * 100)
         # x_train = torch.stack([torch.rand(x_to_explain.shape)] * 100)
-        x_train = x_to_explain + torch.rand(100, *x_to_explain.shape)
+        x_train = x_to_explain + torch.rand(100, *x_to_explain.shape).cuda()
+        # x_train = x_train
         
         # x_train = torch.rand(x.shape)
        
-        if explainer == "LIME":
+        if exp == "LIME":
             explainer = Explainer(method="lime", model=model, dataset_tensor=x_train)
-        elif explainer == " SHAP":
+        elif exp == " SHAP":
             explainer = Explainer(method="shap", model=model, dataset_tensor=x_train)
             
         
@@ -96,14 +97,21 @@ def inference(dataset, model, batch_size, explainer):
         # torch nn.LSTM doesn't allow backward in eval mode, so we make it train briefly
         model.train()   
         # lbl_test = torch.randint(0,10, (batch_size,))  
-        # w_test = torch.ones(x.shape)        
-        # w_p = explainer.get_explanation(model, x)  
-        w_p = explainer.get_explanation(x_to_explain.unsqueeze(0), y.view(1,1))  
+        # w_test = torch.ones(x.shape)    
+        if "G" in exp:
+            w_p = explainer.get_explanation(model, x)  
+        else:
+            # x_to_explain = x_to_explain.cuda()
+            y_test = y.view(1,1)
+            w_p = explainer.get_explanation(x_to_explain.unsqueeze(0), y_test)  
         model.eval()
         y_p = model(x)
+
         y_true.append(y.cpu())
-        # y_pred.append(torch.max(y_p.detach().cpu(), dim=1)[0])
-        y_pred.append(torch.max(y_p.detach().cpu()).view(1,1))
+        if "G" in exp:
+            y_pred.append(torch.max(y_p.detach().cpu(), dim=1)[0])
+        else:
+            y_pred.append(torch.max(y_p.detach().cpu()).view(1,1))
         w_true.append(batch["exp"].cpu().view(w_p.shape))
         w_pred.append(w_p.detach().cpu())   
     return (
@@ -119,7 +127,7 @@ def parse_args():
     parser.add_argument("-model", type=str, default='LSTM')
     parser.add_argument("-exp", type=str, default='IG')
     parser.add_argument("-batch_size_train", type=int, default=20)
-    parser.add_argument("-batch_size_test", type=int, default=2000)
+    parser.add_argument("-batch_size_test", type=int, default=200)
     parser.add_argument("-epoch", type=int, default=10)
     parser.add_argument("-test_only", type=int, default=0)
     parser.add_argument("-seed", type=int, default=1234)
@@ -190,7 +198,7 @@ def main(args):
     f = open(f"results/{ds_name}_experiment_result_model.txt", "a")
     f.write(f"{model_name} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\ \n")
     f.close()
-    acc, f1, fpr, fnr = summary(w_true.cpu().numpy().flatten(), w_pred.cpu().numpy().flatten(), score = False)
+    acc, f1, fpr, fnr = summary(w_true.cpu().numpy().flatten(), w_pred.cpu().numpy().flatten(), score = True)
     f = open(f"results/{ds_name}_experiment_result_explainer.txt", "a")
     f.write(f"{model_name} | {explainer} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\ \n")
     f.close()

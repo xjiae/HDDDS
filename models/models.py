@@ -74,7 +74,7 @@ class SimpleLSTM(XwModel):
     assert x.shape == w.shape
     assert x.shape[2:] == self.in_shape
     N, L = x.shape[0:2]
-    z = torch.cat([x.flatten(2), w.flatten(2)], dim=2).type(torch.DoubleTensor) # (N,L,2*d)
+    z = torch.cat([x.flatten(2), w.flatten(2)], dim=2).type(torch.DoubleTensor).to(x.device) # (N,L,2*d)
     z, _ = self.lstm1(z)
     z, _ = self.lstm2(z)
     z, _ = self.lstm3(z)

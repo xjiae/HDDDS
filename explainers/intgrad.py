@@ -10,7 +10,7 @@ class IntGradExplainer(Explainer):
     self.r2b_method = r2b_method
 
   def get_explanation(self, model, x, w_start=None, w_final=None):
-    assert len(model.out_shape) == 1 # Classification model
+    # assert len(model.out_shape) == 1 # Classification model
     if not self.is_batched:
       x = x.unsqueeze(0)
 

@@ -9,7 +9,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as tudata
-print(torch.__version__)
 # from tqdm import tqdm
 
 # Our stuff

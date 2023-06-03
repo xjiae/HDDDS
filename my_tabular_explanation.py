@@ -32,7 +32,7 @@ def explain(ds_name, exp):
         case "grad":
             # for lstm, need to be in train mode
             config = GradConfigs(train_mode=True)
-            ret_mode = "mean"
+            ret_mode = "prob"
         case "intg":
             # for lstm, need to be in train mode
             config = IntGradConfigs(train_mode=True)

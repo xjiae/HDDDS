@@ -19,7 +19,7 @@ default_configs = TrainConfigs(num_epochs=3)
 
 def train(ds_name):
     data = get_dataset(ds_name)
-    lstm = SimpleLSTM(in_shape=(data.window_size-1, data.num_features), out_shape=(1,data.num_features), return_mode="last")
+    lstm = SimpleLSTM(in_shape=(data.num_features,), out_shape=(1,), return_mode="all")
     model = train_tabular(lstm, ds_name, data, default_configs)
     return model
 

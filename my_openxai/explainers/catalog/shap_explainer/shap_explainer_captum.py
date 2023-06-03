@@ -10,6 +10,7 @@ import torch
 from ...api import Explainer
 from captum.attr import KernelShap
 
+import warnings
 
 class SHAPExplainerC(Explainer):
     '''
@@ -35,15 +36,18 @@ class SHAPExplainerC(Explainer):
     def forward_func_torch(self, input):
         return self.model(input)
 
-    def get_explanation(self, data_x: torch.FloatTensor, label=None) -> torch.FloatTensor:
+    def get_explanation(self, data_x: torch.FloatTensor, label=None):
         '''
         Returns SHAP values as the explaination of the decision made for the input data (data_x)
         :param data_x: data samples to explain decision for
         :return: SHAP values [dim (shap_vals) == dim (data_x)]
         '''
 
+        # Shut the fuck up
+        warnings.filterwarnings("ignore")
         shap_vals = self.explainer.attribute(data_x, target=label, n_samples=self.n_samples)
-        return torch.FloatTensor(shap_vals)
+        warnings.resetwarnings()
+        return shap_vals.float()  # This one can handle both CPU and CUDA
 
 
 

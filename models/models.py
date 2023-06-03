@@ -119,7 +119,6 @@ class SimpleLSTM(XwModel):
 class MyFastResA(XwModel):
   def __init__(self,
                in_shape = (3,256,256),
-               out_shape = (1,),
                w_shape = (1,256,256),
                backbone_name = "resnet18",
                flow_steps = 8,
@@ -127,6 +126,14 @@ class MyFastResA(XwModel):
                freeze_fastflow = False,
                auto_reshape = True,
                return_mode = "scalar_score"):
+      if return_mode == "scalar_score":
+        out_shape = (1,)
+      elif return_mode == "two_class":
+        out_shape = (2,)
+      elif return_mode == "all":
+        out_shape = (1,)
+      else:
+        raise NotImplementedError()
       super(MyFastResA, self).__init__(in_shape, out_shape, w_shape=w_shape)
       self.backbone_name = backbone_name
       self.ffmodel = FastFlow(backbone_name, flow_steps, in_shape[1], conv3x3_only)

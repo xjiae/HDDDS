@@ -165,7 +165,12 @@ def get_tabular_explanation(model, dataset, configs,
   for i in pbar:
     x, y, w, l = dataset[i]
     xx, yy, w = x.unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), w.to(device)
+
     model.train().to(device)
+
+    y_test = model(xx)
+    print(f"y_test {y_test.shape}")
+
     if configs.train_mode:
       ww_exp = explainer.get_explanation(xx, yy, configs.train_mode).view(x.shape)
     else:

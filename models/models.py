@@ -114,7 +114,7 @@ class MyFastResA(XwModel):
                in_shape = (3,256,256),
                out_shape = (1,),
                w_shape = (1,256,256),
-               backbone_name = "wide_resnet50_2",
+               backbone_name = "resnet18",
                flow_steps = 8,
                conv3x3_only = False,
                freeze_fastflow = False,

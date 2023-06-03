@@ -12,7 +12,6 @@ from hddds import *
 snet = SimpleNet(in_shape=(3,24,24), out_shape=(10,))
 
 
-
 x_to_explain = torch.rand(3,24,24)
 x_train = torch.rand(100,3,24,24)
 

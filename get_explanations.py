@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from dataset import *
@@ -137,10 +137,14 @@ def get_tabular_explanation(model, dataset, configs,
                           save_every_k = 20,
                           device = "cuda",
                           do_save = True,
-                          saveto = None):
+                          saveto = None,
+                          seed = 1234):
   assert isinstance(model, XwModel)
   if do_save: assert saveto is not None
   num_todo = len(dataset) if num_todo is None else num_todo
+  _, indices = train_test_split(range(len(dataset)), test_size=num_todo, stratify=dataset.y, random_state=seed)
+  dataset = torch.utils.data.Subset(dataset, indices)
+
 
   if isinstance(configs, GradConfigs):
     explainer = my_openxai.Explainer(method="grad", model=model)
@@ -157,6 +161,7 @@ def get_tabular_explanation(model, dataset, configs,
 
   all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
   pbar = tqdm(range(num_todo))
+
   for i in pbar:
     x, y, w, l = dataset[i]
     xx, yy, w = x.unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), w.to(device)
@@ -187,6 +192,7 @@ def get_tabular_explanation(model, dataset, configs,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),
           "w_exps" : all_w_exps,
+          "w_s" : all_ws,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }

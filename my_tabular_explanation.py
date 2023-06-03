@@ -4,8 +4,20 @@ from models import *
 from train import *
 from get_explanations import *
 from hddds import *
+from utils import *
 import os
-
+import sys
+sys.path.insert(0, "/home/xjiae/HDDDS/")
+def evaluate(ds_name, exp):
+    loadfrom = open(f"saved_explanations/{exp}_{ds_name}.pt", "rb")
+    ret = torch.load(loadfrom)
+    w_true = torch.cat(ret['w_s']).numpy().flatten()
+    w_pred = torch.cat(ret['w_exps']).numpy().flatten()
+    acc, f1, fpr, fnr = summary(w_true, w_pred, score = True)
+    saveto = open(f"results/{ds_name}.txt", "a")
+    saveto.write(f"LSTM | {exp} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\ \n")
+    saveto.close()
+    
     
 def explain(ds_name, exp):
     
@@ -44,9 +56,10 @@ def explain(ds_name, exp):
 if __name__== "__main__":
 
     data = ["hai_sliding_100_test","swat_sliding_100_test", "wadi_sliding_100_test"]
-    exps = ["grad","intg", "lime","shap"]
+    exps = ["grad","intg","lime","shap"]
     for d in data:
         for exp in exps:
             print(f"Running on {d} with {exp}:")
             ret = explain(d, exp)
+            evaluate(d, exp)
     # breakpoint()

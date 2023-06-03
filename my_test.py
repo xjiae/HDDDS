@@ -13,10 +13,10 @@ snet = SimpleNet(in_shape=(3,24,24), out_shape=(10,))
 
 
 x_to_explain = torch.rand(3,24,24)
-x_train = torch.rand(100,3,24,24)
+x_train = torch.rand(10,3,24,24)
 
 grad_explainer = Explainer(method="grad", model=snet)
-intg_explainer = Explainer(method="ig", model=snet, dataset_tensor=torch.zeros(1,3,24,24))
+intg_explainer = Explainer(method="ig", model=snet)
 lime_explainer = Explainer(method="lime", model=snet, dataset_tensor=x_train)
 shap_explainer = Explainer(method="shap", model=snet, dataset_tensor=x_train)
 

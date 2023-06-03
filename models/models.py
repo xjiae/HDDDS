@@ -119,7 +119,7 @@ class MyFastResA(XwModel):
                conv3x3_only = False,
                freeze_fastflow = False,
                auto_reshape = True,
-               return_mode = "only_score"):
+               return_mode = "scalar_score"):
       super(MyFastResA, self).__init__(in_shape, out_shape, w_shape=w_shape)
       self.backbone_name = backbone_name
       self.ffmodel = FastFlow(backbone_name, flow_steps, in_shape[1], conv3x3_only)
@@ -152,8 +152,13 @@ class MyFastResA(XwModel):
     z = self.resnet(torch.cat([x, hmap, w], dim=1))
     z = torch.tanh(z[:,0]).view(-1,1)
     ret['anomaly_score'] = z
-    if self.return_mode == "only_score":
-      return z
+
+    if self.return_mode == "scalar_score":
+      return z  # (N,1)
+    elif self.return_mode == "two_class":
+      anom_prob = (z + 1) / 2
+      good_prob = 1 - anom_prob
+      return torch.cat([good_prob, anom_prob]) # (N,2)
     else:
       return ret
 

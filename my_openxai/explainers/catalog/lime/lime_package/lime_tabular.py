@@ -23,7 +23,7 @@ from .discretize import StatsDiscretizer
 import lime.explanation as explanation
 import lime.lime_base as lime_base
 
-import torch
+
 class TableDomainMapper(explanation.DomainMapper):
     """Maps feature ids to names, generates table views, etc"""
 
@@ -377,7 +377,6 @@ class LimeTabularExplainer(object):
 
         yss = predict_fn(inverse)
 
-
         # for classification, the model needs to provide a list of tuples - classes
         # along with prediction probabilities
         if self.mode == "classification":
@@ -392,9 +391,7 @@ class LimeTabularExplainer(object):
                     self.class_names = [str(x) for x in range(yss[0].shape[0])]
                 else:
                     self.class_names = list(self.class_names)
-                # if not np.allclose(yss.sum(axis=1), 1.0):
-                if not torch.allclose(yss.sum(dim=1).float(), torch.ones(yss.size(0)).to(yss.device)):
-                
+                if not np.allclose(yss.sum(axis=1), 1.0):
                     warnings.warn("""
                     Prediction probabilties do not sum to 1, and
                     thus does not constitute a probability space.
@@ -477,7 +474,7 @@ class LimeTabularExplainer(object):
              ret_exp.local_exp[label],
              ret_exp.score, ret_exp.local_pred) = self.base.explain_instance_with_data(
                     scaled_data,
-                    yss.cpu(),
+                    yss,
                     distances,
                     label,
                     num_features,

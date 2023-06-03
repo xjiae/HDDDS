@@ -51,8 +51,8 @@ class LIME(Explainer):
             attribution_scores = [torch.zeros(N,num_features) for j in range(self.output_dim)]
 
             for i in tqdm(range(all_data.shape[0])):
-                datai = all_data[i,:].flatten().numpy() # Need to vectorize and numpy to make lime happy
-                exp = self.explainer.explain_instance(datai, self.model, num_features=num_features)
+                datai_np = all_data[i,:].flatten().cpu().numpy() # Need to vectorize and numpy to make lime happy
+                exp = self.explainer.explain_instance(datai_np, self.model, num_features=num_features, num_samples=self.n_samples)
 
                 # bring explanations into data order (since LIME automatically orders according to highest importance)
                 for j in range(self.output_dim):

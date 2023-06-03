@@ -3,16 +3,6 @@ import torch
 import numpy as np
 
 # Explanation Models
-'''
-from openxai.explainers import Gradient
-from openxai.explainers import IntegratedGradients
-from openxai.explainers import InputTimesGradient
-from openxai.explainers import SmoothGrad
-from openxai.explainers import LIME
-from openxai.explainers import SHAPExplainerC
-from openxai.explainers import RandomBaseline
-'''
-
 from .explainers import Gradient
 from .explainers import IntegratedGradients
 from .explainers import InputTimesGradient
@@ -55,8 +45,10 @@ def Explainer(method: str,
             param_dict_ig = dict()
             param_dict_ig['method'] = 'gausslegendre'
             param_dict_ig['multiply_by_inputs'] = False
-            assert isinstance(dataset_tensor, torch.Tensor)
-            param_dict_ig['baseline'] = torch.mean(dataset_tensor, dim=0).reshape(1, -1).float()
+            if isinstance(dataset_tensor, torch.Tensor):
+              param_dict_ig['baseline'] = torch.mean(dataset_tensor, dim=0).reshape(1, -1).float()
+            else:
+              param_dict_ig['baseline'] = None  # This will use the zero scalar
         explainer = IntegratedGradients(model,
                                         method=param_dict_ig['method'],
                                         multiply_by_inputs=param_dict_ig['multiply_by_inputs'],
@@ -82,8 +74,19 @@ def Explainer(method: str,
             param_dict_lime['n_samples'] = 1000
             param_dict_lime['discretize_continuous'] = False
 
-        # explainer = LIME(model.predict,
-        explainer = LIME(lambda w_np: model(torch.tensor(np.float32(w_np))),
+        @torch.no_grad()
+        def predict_fn(x_np, batch_size=32):  # Change batch size if you OOM
+          device = next(model.parameters()).device
+          splits = torch.split(torch.tensor(np.float32(x_np)), batch_size)
+          y = []
+          for sp_x in splits:
+            sp_y = model(sp_x.to(device))
+            y.append(sp_y)
+          y = torch.cat(y, dim=0)
+          return y.detach().cpu().numpy()
+
+        # explainer = LIME(lambda w_np: model(torch.tensor(np.float32(w_np)).to(next(model.parameters()).device)),
+        explainer = LIME(predict_fn,
                          param_dict_lime['dataset_tensor'],
                          std=param_dict_lime['std'],
                          mode=param_dict_lime['mode'],

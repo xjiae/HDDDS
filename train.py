@@ -88,6 +88,10 @@ def train_mvtec(model, categories, configs, saveto_filename_prefix=None):
   return model.cpu()
 
 
+# CUAD stuff
+
+
+# Tabular stuff
 def get_tabular_dataloader(dataset,
                            train_batch_size = 32,
                            valid_batch_size = 32,
@@ -165,3 +169,52 @@ def train_tabular(model, ds_name, dataset, configs, saveto_filename_prefix=None)
   model.load_state_dict(best_model_weights)
   torch.cuda.empty_cache()
   return model.cpu()
+
+
+
+def train(model, dataset_name, configs, saveto_prefix=None):
+  optimizer = torch.optim.Adam(model.parameters(), lr=configs.lr)
+
+  if dataset_name == "mvtec":
+    loader_func = get_mvtec_dataloaders
+  elif datase_name == "tabular":
+    loader_func = get_tabular_dataloder
+
+  train_dataset, valid_dataset, train_loader, valid_loader = loader_func(**configs)
+  categories_str = "_".join(categories)
+
+  best_valid_acc = 0.0
+  best_model_weights = copy.deepcopy(model.state_dict())
+
+  print(f"Training MVTec with cats: {categories}")
+  print(f"Will save to {configs.models_saveto_dir}")
+  print(f"PID {os.getpid()}, num epochs {configs.num_epochs}, lr {configs.lr}")
+  
+  for epoch in range(1, configs.num_epochs+1):
+    print(f"# epoch {epoch}/{configs.num_epochs}")
+    train_stats = run_once_mvtec(model, train_loader, optimizer, "train", configs)
+    valid_stats = run_once_mvtec(model, valid_loader, optimizer, "valid", configs)
+    _, train_loss, train_acc = train_stats
+    _, valid_loss, valid_acc = valid_stats
+    desc_str = f"train (loss {train_loss:.4f}, acc {train_acc:.4f}), "
+    desc_str += f"valid (loss {valid_loss:4f}, acc {valid_acc:.4f})"
+    print(desc_str)
+
+    saveto = f"mvtec_{categories_str}_epoch{epoch}.pt"
+    saveto = saveto if saveto_filename_prefix is None else saveto_filename_prefix + "_" + saveto
+    saveto = os.path.join(configs.models_saveto_dir, saveto)
+    if valid_acc > best_valid_acc:
+      best_valid_acc = valid_acc
+      best_model_weights = copy.deepcopy(model.state_dict())
+      torch.save(best_model_weights, saveto)
+      print(f"Saved to {saveto}")
+
+  # Save the best model so far at the end of training
+  torch.save(best_model_weights, saveto)
+  model.load_state_dict(best_model_weights)
+  torch.cuda.empty_cache()
+  return model.cpu()
+
+
+
+

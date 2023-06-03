@@ -51,14 +51,14 @@ class LimeConfigs(ExplainerConfigs):
 
 # SHAP
 class ShapConfigs(ExplainerConfigs):
-  def __init__(self, num_train=None, x_train=None):
+  def __init__(self, num_samples=100):
     super(ShapConfigs, self).__init__()
+    self.param_dict_shap = {
+      "subset_size" : num_samples
+    }
 
   def desc_str(self):
-    return "lime"
-
-  def make_x_train(self):
-    raise NotImplementedError()
+    return "shap"
 
 
 # The stuff for MVTec
@@ -82,7 +82,7 @@ def get_mvtec_explanation(model, dataset, configs,
   elif isinstance(configs, LimeConfigs):
     explainer = my_openxai.Explainer(method="lime", model=model, param_dict_lime=configs.param_dict_lime)
   elif isinstance(configs, ShapConfigs):
-    raise NotImplementedError()
+    explainer = my_openxai.Explainer(method="shap", model=model, param_dict_shap=configs.param_dict_shap)
   else:
     raise NotImplementedError()
 

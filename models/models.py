@@ -89,7 +89,7 @@ class SimpleLSTM(XwModel):
       w = w.view(N, L, *self.w_shape)
 
     z = torch.cat([x.flatten(2), w.flatten(2)], dim=2) # (N,L,2*d)
-    z = z.type(torch.FloatTensor) # Force a convert because nn.LSTM is a coward
+    z = z.type(torch.FloatTensor).to(x.device) # Force a convert because nn.LSTM is a coward
     z, _ = self.lstm1(z)
     z, _ = self.lstm2(z)
     z, _ = self.lstm3(z)
@@ -101,9 +101,16 @@ class SimpleLSTM(XwModel):
     elif self.return_mode == "all":
       return z
     elif self.return_mode == "prob":
-      ll = z[:, -1]
-      rr = 1 - z[:, -1]
-      return torch.hstack((ll, rr))
+      max = torch.max(z.clamp(0,1), dim=3)[0]
+      return torch.hstack((max, 1-max)).squeeze()
+    elif self.return_mode == "mean":
+      max = torch.mean(z, dim=3)[0]
+      return max
+  
+      # ll = z[:, -1]
+      # rr = 1 - z[:, -1]
+      
+      # return torch.hstack((ll, rr)).squeeze()
     else:
       raise NotImplementedError()
 

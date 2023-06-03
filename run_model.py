@@ -84,10 +84,8 @@ def inference(dataset, model, batch_size, exp):
        
         if exp == "LIME":
             explainer = Explainer(method="lime", model=model, dataset_tensor=x_train)
-        elif exp == " SHAP":
+        if exp == "SHAP":
             explainer = Explainer(method="shap", model=model, dataset_tensor=x_train)
-            
-        
         
         # torch nn.LSTM doesn't allow backward in eval mode, so we make it train briefly
         model.train()   
@@ -145,7 +143,7 @@ def main(args):
     d = test_dataset.num_features
     # too expensive to compute the whole dataset
     if explainer == "LIME" or explainer == "SHAP":
-        _, indices = train_test_split(range(len(test_dataset)), test_size=200, stratify=test_dataset.y, random_state=args.seed)
+        _, indices = train_test_split(range(len(test_dataset)), test_size=1000, stratify=test_dataset.y, random_state=args.seed)
         test_dataset = torch.utils.data.Subset(test_dataset, indices)
         mode = "prob"
         # breakpoint()
@@ -206,7 +204,7 @@ if __name__ == '__main__':
     #     if usage < 100:
     #         break
     main(args) 
-    breakpoint()
+    # breakpoint()
     
     
         

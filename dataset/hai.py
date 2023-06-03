@@ -105,7 +105,7 @@ class HAISlidingDataset(torch.utils.data.Dataset):
         # item['exp'] = torch.from_numpy(self.explanation.iloc[idx].values)
         item['exp'] = torch.from_numpy(self.explanation.iloc[i : i + WINDOW_GIVEN].values)
         
-        return item
+        return item["x"], item['y'], item['exp'], item["xl"]
     
     def get_ts(self):
         return self.ts

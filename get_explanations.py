@@ -16,18 +16,20 @@ class ExplainerConfigs:
 
 # Gradients
 class GradConfigs(ExplainerConfigs):
-  def __init__(self, abs_value=False):
+  def __init__(self, abs_value=False, train_mode=False):
     super(GradConfigs, self).__init__() 
     self.abs_value = abs_value
+    self.train_mode = train_mode
 
   def desc_str(self):
     return "gradu" if self.abs_value else "grads"
 
 # Integrated gradients
 class IntGradConfigs(ExplainerConfigs):
-  def __init__(self, baseline=None):
+  def __init__(self, baseline=None, train_mode=False):
     super(IntGradConfigs, self).__init__()
     self.baseline = baseline
+    self.train_mode = train_mode
 
   def desc_str(self):
     return "intg"
@@ -45,6 +47,7 @@ class LimeConfigs(ExplainerConfigs):
       "n_samples" : num_samples,
       "discretize_continuous" : False
     }
+    self.train_mode = False
 
   def desc_str(self):
     return "lime"
@@ -56,6 +59,7 @@ class ShapConfigs(ExplainerConfigs):
     self.param_dict_shap = {
       "subset_size" : num_samples
     }
+    self.train_mode = False
 
   def desc_str(self):
     return "shap"
@@ -124,4 +128,69 @@ def get_mvtec_explanation(model, dataset, configs,
 
   return stuff
 
+# The stuff for tabular
+def get_tabular_explanation(model, dataset, configs,
+                          custom_desc = None,
+                          misc_data = None,
+                          num_todo = None,
+                          post_process_fun = None,
+                          save_every_k = 20,
+                          device = "cuda",
+                          do_save = True,
+                          saveto = None):
+  assert isinstance(model, XwModel)
+  if do_save: assert saveto is not None
+  num_todo = len(dataset) if num_todo is None else num_todo
+
+  if isinstance(configs, GradConfigs):
+    explainer = my_openxai.Explainer(method="grad", model=model)
+  elif isinstance(configs, IntGradConfigs):
+    explainer = my_openxai.Explainer(method="ig", model=model, dataset_tensor=configs.baseline)
+  elif isinstance(configs, LimeConfigs):
+    explainer = my_openxai.Explainer(method="lime", model=model, param_dict_lime=configs.param_dict_lime)
+  elif isinstance(configs, ShapConfigs):
+    explainer = my_openxai.Explainer(method="shap", model=model, param_dict_shap=configs.param_dict_shap)
+  else:
+    raise NotImplementedError()
+
+ 
+
+  all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
+  pbar = tqdm(range(num_todo))
+  for i in pbar:
+    x, y, w, l = dataset[i]
+    xx, yy, w = x.unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), w.to(device)
+    model.train().to(device)
+    if configs.train_mode:
+      ww_exp = explainer.get_explanation(xx, yy, configs.train_mode).view(x.shape)
+    else:
+      ww_exp = explainer.get_explanation(xx, yy).view(x.shape)
+    model.eval().to(device)
+    if callable(post_process_fun):
+      w_exp = post_process_fun(ww_exp)
+    else:
+      w_exp = ww_exp.clamp(0,1).view(w.shape).float()
+
+    all_xs.append(x.cpu())
+    all_ys.append(y)
+    all_ws.append(w.cpu())
+    all_w_exps.append(w_exp.cpu())
+
+    # Speedhack: save once every few iters, or if we're near the end
+    if do_save and (i % save_every_k == 0 or len(pbar) - i < 2):
+      model_class = model.__class__
+      state_dict = model.state_dict()
+      stuff = {
+          "dataset" : dataset,
+          "model_class" : model_class,
+          "model_state_dict" : state_dict,
+          "method" : configs.desc_str(),
+          "num_total" : len(all_xs),
+          "w_exps" : all_w_exps,
+          "custom_desc" : custom_desc,
+          "misc_data" : misc_data,
+      }
+      torch.save(stuff, saveto)
+
+  return stuff
 

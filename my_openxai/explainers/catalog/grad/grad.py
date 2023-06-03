@@ -19,7 +19,7 @@ class Gradient(Explainer):
 
         super(Gradient, self).__init__(model)
 
-    def get_explanation(self, x: torch.Tensor, label: torch.Tensor) -> torch:
+    def get_explanation(self, x: torch.Tensor, label: torch.Tensor, train_mode: bool=False) -> torch:
         """
         Explain an instance prediction.
         Args:
@@ -29,8 +29,9 @@ class Gradient(Explainer):
         Returns:
             exp (torch.Tensor, [N x 1 x d] for tabular instance; [N x m x n x d] for image instance: instance level explanation):
         """
-        self.model.eval()
-        self.model.zero_grad()
+        if train_mode == False:
+            self.model.eval()
+            self.model.zero_grad()
 
         saliency = Gradient_Captum(self.model)
 

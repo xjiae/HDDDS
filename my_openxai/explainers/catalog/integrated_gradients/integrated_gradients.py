@@ -21,7 +21,7 @@ class IntegratedGradients(Explainer):
 
         super(IntegratedGradients, self).__init__(model)
 
-    def get_explanation(self, x: torch.Tensor, label: torch.Tensor) -> torch.tensor:
+    def get_explanation(self, x: torch.Tensor, label: torch.Tensor, train_mode: bool=False) -> torch.tensor:
         """
         Explain an instance prediction.
         Args:
@@ -30,8 +30,9 @@ class IntegratedGradients(Explainer):
         Returns:
             exp (torch.Tensor, [N x 1 x d] for tabular instance; [N x m x n x d] for image instance: instance level explanation):
         """
-        self.model.eval()
-        self.model.zero_grad()
+        if train_mode == False:
+            self.model.eval()
+            self.model.zero_grad()
 
         N, x_shape = x.size(0), x.shape[1:]
         x = x.view(N,-1)

@@ -31,7 +31,7 @@ swat_sliding_configs = TrainConfigs(num_epochs=3, loaders_kwargs = DEFAULT_SWAT_
 
 def xj_train(ds_name):
     data = get_dataset(ds_name)
-    lstm = SimpleLSTM(in_shape=(data.num_features,), out_shape=(1,), return_mode="all")
+    lstm = SimpleLSTM(in_shape=(data.num_features,), out_shape=(1,), return_mode="last")
     model = train_tabular(lstm, ds_name, data, default_configs)
     return model
 

@@ -111,6 +111,16 @@ class SimpleLSTM(XwModel):
       # rr = 1 - z[:, -1]
       
       # return torch.hstack((ll, rr)).squeeze()
+
+    elif self.return_mode == "two_class":
+      assert self.out_shape == (1,)
+      z_last = z[:,-1]
+      z_last_normed = torch.tanh(z_last)
+      z_last_anom = (z_last_normed + 1) / 2
+      z_last_good = 1 - z_last_anom
+      return  torch.cat([z_last_good, z_last_anom], dim=1) #(N, 2)
+    
+    
     else:
       raise NotImplementedError()
 
@@ -197,5 +207,3 @@ class XWrapper(nn.Module):
       return y.softmax(dim=1)
     else:
       return y
-
-

@@ -107,7 +107,8 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
   _ = model.train().cuda() if phase == "train" else model.eval().cuda()
-  loss_fn = torch.nn.MSELoss()
+
+  loss_fn = nn.BCELoss(reduction="sum")
   num_processed, num_corrects = 0, 0
   running_loss, avg_acc = 0.0, 0.0
   pbar = tqdm(dataloader)
@@ -115,8 +116,10 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs):
     _ = optimizer.zero_grad() if phase == "train" else None
     x, y, w, l = x.cuda(), y.cuda(), w.cuda(), l.cuda()
     with torch.set_grad_enabled(phase == "train"):
-      y_pred = model(x)
-      loss = loss_fn(y_pred.double(), l.double())
+      y_pred = torch.sigmoid(model(x).view(y.shape))
+      
+      loss = loss_fn(y_pred.double(), y.double())
+      # breakpoint()
       if phase == "train":
         loss.backward()
         optimizer.step()
@@ -124,7 +127,7 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs):
     running_loss += loss.item()
     avg_loss = (running_loss / num_processed)
     desc_str = f"[train]" if phase == "train" else "[valid]"
-    desc_str += f" processed {num_processed}, loss {avg_loss:.4f}"
+    desc_str += f" processed {num_processed}, loss {avg_loss:.5f}"
     pbar.set_description(desc_str)
   return model, running_loss / num_processed # model, avg loss
 

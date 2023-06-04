@@ -1,19 +1,19 @@
 import os
 import numpy as np
 import torch
-import torch.utils.data as tud
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import transformers
 from transformers import (
-    MODEL_FOR_QUESTION_ANSWERING_MAPPING,
     AutoTokenizer,
     squad_convert_examples_to_features,
 )
 
-from transformers.data.processors.squad import SquadResult, SquadV1Processor
+from transformers.data.processors.squad import SquadV1Processor
+import tensorflow_datasets as tfds
 
-MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
-MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
+import torch.utils.data as tud
 
 # Adapted from: https://github.com/TheAtticusProject/cuad/blob/main/train.py
 # Light wrapper around a TensorDataset where elements are 8-tuples of:
@@ -25,35 +25,20 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 #   index 5: cls_index
 #   index 6: p_mask
 #   index 7: is_impossible
-class CuadDataset(tud.Dataset):
+class SquadDataset(tud.Dataset):
   def __init__(self,
                tokenizer_or_name, # Need to supply the name of the classifier
-               tokenizer_name = "default-desc", # Gets overriden if tokenizer_or_name is str 
+               tokenizer_name = "defaultname", # Gets overriden if tokenizer_or_name is str 
                max_seq_len = 384,
                max_query_len = 64,
                doc_stride = 128,
-               data_dir = "data/cuad",
-               train_filename = "train.json",
-               eval_filename = "test.json",
-               cache_dir = "data/cuad/cache",
+               cache_dir = "data/squad/cache",
                overwrite_cache = False,
                is_train = True,
                seed = 1234):
 
     torch.manual_seed(seed)
     np.random.seed(seed)
-
-    # Make sure some things exist, and create if not
-    self.data_dir = data_dir
-    assert os.path.isdir(data_dir)
-
-    self.train_filename = train_filename
-    self.train_file = os.path.join(data_dir, train_filename)
-    assert os.path.isfile(self.train_file)
-
-    self.eval_filename = eval_filename
-    self.eval_file = os.path.join(data_dir, eval_filename)
-    assert os.path.isfile(self.eval_file)
 
     # Set up the tokenizer
     if isinstance(tokenizer_or_name, str):
@@ -83,14 +68,11 @@ class CuadDataset(tud.Dataset):
       print(f"loading cache from {self.cache_file}")
       self.dataset = torch.load(self.cache_file)
     else:
-      filename = train_filename if is_train else eval_filename
-      self.dataset = load_cuad_dataset(self.tokenizer,
-                                       data_dir,
-                                       filename,
-                                       is_train,
-                                       max_seq_len,
-                                       max_query_len,
-                                       doc_stride)
+      self.dataset = load_dataset(self.tokenizer,
+                                  is_train,
+                                  max_seq_len,
+                                  max_query_len,
+                                  doc_stride)
       torch.save(self.dataset, self.cache_file)
       print(f"cached to {self.cache_file}")
 
@@ -119,12 +101,16 @@ class CuadDataset(tud.Dataset):
     return len(self.dataset)
 
 
-def load_cuad_dataset(tokenizer, data_dir, filename, is_train, max_seq_len, max_query_len, doc_stride):
+def load_dataset(tokenizer, is_train, max_seq_len, max_query_len, doc_stride):
     processor = SquadV1Processor()
+    '''
     if is_train:
         examples = processor.get_train_examples(data_dir, filename=filename)
     else:
         examples = processor.get_dev_examples(data_dir, filename=filename)
+    '''
+    tfds_examples = tfds.load("squad")
+    examples = SquadV1Processor().get_examples_from_dataset(tfds_examples, evaluate=not is_train)
     features, dataset = squad_convert_examples_to_features(
         examples = examples,
         tokenizer = tokenizer,
@@ -135,16 +121,16 @@ def load_cuad_dataset(tokenizer, data_dir, filename, is_train, max_seq_len, max_
         return_dataset = "pt")
 
     if is_train:
-      return _get_balanced_dataset(dataset)
+      return get_balanced_dataset(dataset)
     else:
       return dataset
 
 
-def _get_balanced_dataset(dataset):
+def get_balanced_dataset(dataset):
     """
     returns a new dataset, where positive and negative examples are approximately balanced
     """
-    pos_mask = _get_dataset_pos_mask(dataset)
+    pos_mask = get_dataset_pos_mask(dataset)
     neg_mask = [~mask for mask in pos_mask]
     npos, nneg = np.sum(pos_mask), np.sum(neg_mask)
 
@@ -159,7 +145,7 @@ def _get_balanced_dataset(dataset):
     return subset_dataset
 
 
-def _get_dataset_pos_mask(dataset):
+def get_dataset_pos_mask(dataset):
     """
     Returns a list, pos_mask, where pos_mask[i] indicates is True if the ith example in the dataset is positive
     (i.e. it contains some text that should be highlighted) and False otherwise.
@@ -172,22 +158,4 @@ def _get_dataset_pos_mask(dataset):
         is_positive = end_pos > start_pos
         pos_mask.append(is_positive)
     return pos_mask
-
-
-def get_cuad_dataloaders(tokenizer_or_name = "roberta-base",
-                         train_batch_size = 8,
-                         valid_batch_size = 8,
-                         seed = None,
-                         **kwargs):
-  torch.manual_seed(1234 if seed is None else seed)
-  train_dataset = CuadDataset(tokenizer_or_name, is_train=True, **kwargs)
-  valid_dataset = CuadDataset(tokenizer_or_name, is_train=False, **kwargs)
-  train_loader = tud.DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
-  valid_loader = tud.DataLoader(valid_dataset, batch_size=valid_batch_size, shuffle=True)
-  return { "train_dataset" : trains,
-           "valid_dataset" : valids,
-           "train_dataloader" : train_loader,
-           "valid_dataloader" : valid_loader
-          }
-
 

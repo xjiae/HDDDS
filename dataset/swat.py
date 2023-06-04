@@ -4,7 +4,7 @@ import re
 from sklearn.preprocessing import MinMaxScaler
 import datetime as dt
 import torch
-import torch.utils.data
+import torch.utils.data as tud
 from tqdm import tqdm
 
 class SWaTDataset(torch.utils.data.Dataset):
@@ -173,8 +173,8 @@ def get_swat_dataloaders(normalize = False,
                          mix_good_and_anom = True,
                          train_frac = 0.7,
                          seed = None):
-  good_dataset = SWATDataset(contents="train", raw=normalize)
-  anom_dataset = SWATDataset(contents="valid", raw=normalize)
+  good_dataset = SWaTDataset(contents="train", raw=normalize)
+  anom_dataset = SWaTDataset(contents="valid", raw=normalize)
 
   torch.manual_seed(1234 if seed is None else seed)
   if mix_good_and_anom:
@@ -201,8 +201,8 @@ def get_swat_sliding_dataloaders(window_size,
                                  mix_good_and_anom = True,
                                  train_frac = 0.7,
                                  seed = None):
-  good_dataset = SWATSlidingDataset(window_size=window_size, stride=stride, train=True)
-  anom_dataset = SWATSlidingDataset(window_size=window_size, stride=stride, train=False)
+  good_dataset = SWaTSlidingDataset(window_size=window_size, stride=stride, train=True)
+  anom_dataset = SWaTSlidingDataset(window_size=window_size, stride=stride, train=False)
 
   torch.manual_seed(1234 if seed is None else seed)
   if mix_good_and_anom:

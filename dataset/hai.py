@@ -14,17 +14,17 @@ WINDOW_GIVEN = 39
 class HAIDataset(torch.utils.data.Dataset):
     def __init__(self, root=None, contents=None, raw=False):
         assert contents in ["all", "train", "valid"]
-        if mode == "all":
+        if contents == "all":
             train_data = pd.read_csv('data/hai/train_processed.csv')
             test_data = pd.read_csv('data/hai/test_processed.csv')
             self.data = pd.concat([train_data, test_data])
             train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
             test_explanation = pd.read_csv('data/hai/test_gt_exp.csv')
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
-        elif mode == "train":
+        elif contents == "train":
             self.data = pd.read_csv('data/hai/train_processed.csv')
             self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
-        elif mode == "valid":
+        elif contents == "valid":
             self.data = pd.read_csv('data/hai/test_processed.csv')
             self.explanation = pd.read_csv('data/hai/test_gt_exp.csv')
         else:

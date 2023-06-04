@@ -4,7 +4,7 @@ import re
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 import torch
-import torch.utils.data
+import torch.utils.data as tud
 
 class WADIDataset(torch.utils.data.Dataset):
     def __init__(self, root=None, contents=None, raw=False):

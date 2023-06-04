@@ -4,31 +4,32 @@ import re
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 import torch
-import torch.utils.data
+import torch.utils.data as tud
 import os
 
 WINDOW_SIZE = 40
 WINDOW_GIVEN = 39
 
 
-
-
 class HAIDataset(torch.utils.data.Dataset):
-    def __init__(self, root=None, all = False, train = False, raw = False):
-        if all:
+    def __init__(self, root=None, contents=None, raw=False):
+        assert contents in ["all", "train", "valid"]
+        if mode == "all":
             train_data = pd.read_csv('data/hai/train_processed.csv')
             test_data = pd.read_csv('data/hai/test_processed.csv')
             self.data = pd.concat([train_data, test_data])
             train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
             test_explanation = pd.read_csv('data/hai/test_gt_exp.csv')
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+        elif mode == "train":
+            self.data = pd.read_csv('data/hai/train_processed.csv')
+            self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
+        elif mode == "valid":
+            self.data = pd.read_csv('data/hai/test_processed.csv')
+            self.explanation = pd.read_csv('data/hai/test_gt_exp.csv')
         else:
-            if train:
-                self.data = pd.read_csv('data/hai/train_processed.csv')
-                self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-3)))
-            else:
-                self.data = pd.read_csv('data/hai/test_processed.csv')
-                self.explanation = pd.read_csv('data/hai/test_gt_exp.csv')
+            raise NotImplementedError()
+
         if raw:
             self.data = pd.read_csv('data/hai/raw.csv')   
             test_explanation = pd.read_csv('data/hai/test_gt_exp.csv')
@@ -200,6 +201,7 @@ def preprocess(path, train=True):
         dfs.append(df)
     df = pd.concat(dfs)
     return df
+
 def normalize(df, min, max):
         ndf = df.copy()
         for c in df.columns:
@@ -208,6 +210,64 @@ def normalize(df, min, max):
             else:
                 ndf[c] = (df[c] - min[c]) / (max[c] - min[c])
         return ndf
+
+
+def get_hai_dataloaders(normalize = False,
+                        train_batch_size = 32,
+                        valid_batch_size = 32,
+                        mix_good_and_anom = True,
+                        train_frac = 0.7,
+                        seed = None):
+  good_dataset = HAIDataset(contents="train", raw=normalize)
+  anom_dataset = HAIDataset(contents="valid", raw=normalize)
+
+  torch.manual_seed(1234 if seed is None else seed)
+  if mix_good_and_anom:
+    concats = tud.ConcatDataset([good_dataset, anom_dataset])
+    total = len(concats)
+    num_train = int(total * train_frac)
+    trains, valids = tud.random_split(concats, [num_train, total - num_train])
+  else:
+    trains, valids = good_dataset, anom_dataset
+
+  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
+  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+  return { "train_dataset" : trains,
+           "valid_dataset" : valids,
+           "train_dataloader" : train_loader,
+           "valid_dataloader" : valid_loader
+          }
+
+
+def get_hai_sliding_dataloaders(window_size,
+                                stride = 1,
+                                train_batch_size = 32,
+                                valid_batch_size = 32,
+                                mix_good_and_anom = True,
+                                train_frac = 0.7,
+                                seed = None):
+  good_dataset = HAISlidingDataset(window_size=window_size, stride=stride, train=True)
+  anom_dataset = HAISlidingDataset(window_size=window_size, stride=stride, train=False)
+
+  torch.manual_seed(1234 if seed is None else seed)
+  if mix_good_and_anom:
+    concats = tud.ConcatDataset([good_dataset, anom_dataset])
+    total = len(concats)
+    num_train = int(total * train_frac)
+    trains, valids = tud.random_split(concats, [num_train, total - num_train])
+  else:
+    trains, valids = good_dataset, anom_dataset
+
+  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=False)
+  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=False)
+  return { "train_dataset" : trains,
+           "valid_dataset" : valids,
+           "train_dataloader" : train_loader,
+           "valid_dataloader" : valid_loader
+          }
+
+
+
 def main():
     gt = process_gt()
     path = '../../../../data2/xjiae/hddds/hai/hai-22.04/'

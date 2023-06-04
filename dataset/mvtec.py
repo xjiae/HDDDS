@@ -89,8 +89,8 @@ class MVTecDataset(Dataset):
 def get_mvtec_dataloaders(categories,
                           train_batch_size = 8,
                           valid_batch_size = 8,
-                          train_frac = 0.7,
                           mix_good_and_anom = True,
+                          train_frac = 0.7,
                           seed = None):
     good_datasets = []
     anom_datasets = []
@@ -113,6 +113,11 @@ def get_mvtec_dataloaders(categories,
 
     train_loader = torch.utils.data.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
     valid_loader = torch.utils.data.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
-    return trains, valids, train_loader, valid_loader
+    return { "train_dataset" : trains,
+             "valid_dataset" : valids,
+             "train_dataloader" : train_loader,
+             "valid_dataloader" : valid_loader
+            }
+
 
 

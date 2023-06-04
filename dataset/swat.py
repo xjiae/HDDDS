@@ -8,21 +8,25 @@ import torch.utils.data
 from tqdm import tqdm
 
 class SWaTDataset(torch.utils.data.Dataset):
-    def __init__(self, root=None, all = False, train = False, raw = False):
-        if all:
+    def __init__(self, root=None, contents=None, raw = False):
+        assert contents in ["all", "train", "valid"]
+        if contents == "all":
             train_data = pd.read_csv('data/swat/train_processed.csv', index_col=0)
             test_data = pd.read_csv('data/swat/test_processed.csv', index_col=0)
             self.data = pd.concat([train_data, test_data])
             train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
             test_explanation = pd.read_csv('data/swat/test_gt_exp.csv')
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+        elif contents == "train":
+            self.data = pd.read_csv('data/swat/train_processed.csv', index_col=0)
+            self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-2)))
+        elif contents == "valid":
+            self.data = pd.read_csv('data/swat/test_processed.csv', index_col=0)
+            self.explanation = pd.read_csv('data/swat/test_gt_exp.csv')
         else:
-            if train:
-                self.data = pd.read_csv('data/swat/train_processed.csv', index_col=0)
-                self.explanation = pd.DataFrame(np.zeros((self.data.shape[0], self.data.shape[1]-2)))
-            else:
-                self.data = pd.read_csv('data/swat/test_processed.csv', index_col=0)
-                self.explanation = pd.read_csv('data/swat/test_gt_exp.csv')
+            raise NotImplementedError()
+
+
         if raw:
             self.data = pd.read_csv('data/swat/raw.csv', index_col=0)   
             test_explanation = pd.read_csv('data/swat/test_gt_exp.csv')
@@ -162,6 +166,62 @@ def normalize(df, min, max):
             else:
                 ndf[c] = (df[c] - min[c]) / (max[c] - min[c])
         return ndf
+
+def get_swat_dataloaders(normalize = False,
+                         train_batch_size = 32,
+                         valid_batch_size = 32,
+                         mix_good_and_anom = True,
+                         train_frac = 0.7,
+                         seed = None):
+  good_dataset = SWATDataset(contents="train", raw=normalize)
+  anom_dataset = SWATDataset(contents="valid", raw=normalize)
+
+  torch.manual_seed(1234 if seed is None else seed)
+  if mix_good_and_anom:
+    concats = tud.ConcatDataset([good_dataset, anom_dataset])
+    total = len(concats)
+    num_train = int(total * train_frac)
+    trains, valids = tud.random_split(concats, [num_train, total - num_train])
+  else:
+    trains, valids = good_dataset, anom_dataset
+
+  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
+  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+  return { "train_dataset" : trains,
+           "valid_dataset" : valids,
+           "train_dataloader" : train_loader,
+           "valid_dataloader" : valid_loader
+          }
+
+
+def get_swat_sliding_dataloaders(window_size,
+                                 stride = 1,
+                                 train_batch_size = 32,
+                                 valid_batch_size = 32,
+                                 mix_good_and_anom = True,
+                                 train_frac = 0.7,
+                                 seed = None):
+  good_dataset = SWATSlidingDataset(window_size=window_size, stride=stride, train=True)
+  anom_dataset = SWATSlidingDataset(window_size=window_size, stride=stride, train=False)
+
+  torch.manual_seed(1234 if seed is None else seed)
+  if mix_good_and_anom:
+    concats = tud.ConcatDataset([good_dataset, anom_dataset])
+    total = len(concats)
+    num_train = int(total * train_frac)
+    trains, valids = tud.random_split(concats, [num_train, total - num_train])
+  else:
+    trains, valids = good_dataset, anom_dataset
+
+  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=False)
+  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=False)
+  return { "train_dataset" : trains,
+           "valid_dataset" : valids,
+           "train_dataloader" : train_loader,
+           "valid_dataloader" : valid_loader
+          }
+
+
 
 def main():
     gt = process_gt()

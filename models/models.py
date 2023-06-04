@@ -70,7 +70,7 @@ class SimpleNet(XwModel):
 
 # A simple LSTM implementation
 class SimpleLSTM(XwModel):
-  def __init__(self, in_shape, out_shape, hidden_dim=128, auto_reshape=True, return_mode="last"):
+  def __init__(self, in_shape, out_shape, hidden_dim=128, auto_reshape=True, return_mode="last", softmax_output=True):
     super(SimpleLSTM, self).__init__(in_shape, out_shape, w_shape=in_shape)
     self.hidden_dim = hidden_dim
     self.lstm1 = nn.LSTM(input_size=2*self.in_dim, hidden_size=hidden_dim, batch_first=True)
@@ -79,6 +79,7 @@ class SimpleLSTM(XwModel):
     self.linear = nn.Linear(hidden_dim, self.out_dim)
     self.auto_reshape = auto_reshape
     self.return_mode = return_mode
+    self.softmax_output = softmax_output
 
   def forward(self, x, w=None):
     N = x.size(0) # N is batch dim
@@ -96,6 +97,9 @@ class SimpleLSTM(XwModel):
     z = self.linear(z)
     z = z.view(N,L,*self.out_shape)
 
+    if self.softmax_output:
+      z = z.softmax(dim=2)
+
     if self.return_mode == "last":
       return z[:,-1]
     elif self.return_mode == "all":
@@ -106,19 +110,13 @@ class SimpleLSTM(XwModel):
     elif self.return_mode == "mean":
       max = torch.mean(z, dim=3)[0]
       return max
-  
-      # ll = z[:, -1]
-      # rr = 1 - z[:, -1]
-      
-      # return torch.hstack((ll, rr)).squeeze()
 
     elif self.return_mode == "two_class":
       assert self.out_shape == (1,)
       z_last = z[:,-1]
-      z_last_normed = torch.tanh(z_last)
-      z_last_anom = (z_last_normed + 1) / 2
-      z_last_good = 1 - z_last_anom
-      return  torch.cat([z_last_good, z_last_anom], dim=1) #(N, 2)
+      anom_prob = torch.sigmoid(z_last)
+      good_prob = 1 - anom_prob
+      return  torch.cat([good_prob, anom_prob], dim=1) #(N, 2)
     
     
     else:
@@ -174,13 +172,13 @@ class MyFastResA(XwModel):
     ret = self.ffmodel(x)
     hmap = ret["anomaly_map"]
     z = self.resnet(torch.cat([x, hmap, w], dim=1))
-    z = torch.tanh(z[:,0]).view(-1,1)
+    z = torch.sigmoid(z[:,0]).view(-1,1)
     ret['anomaly_score'] = z
 
     if self.return_mode == "scalar_score":
       return z  # (N,1)
     elif self.return_mode == "two_class":
-      anom_prob = (z + 1) / 2
+      anom_prob = z
       good_prob = 1 - anom_prob
       return torch.cat([good_prob, anom_prob], dim=1) # (N,2)
     else:

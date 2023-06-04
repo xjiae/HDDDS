@@ -32,7 +32,9 @@ class MVTecDataset(Dataset):
                  category,
                  root = os.path.join(DATA_DIR, "mvtec-ad"),
                  input_size = 256,  # Loads as (3,256,256) images
-                 is_train = True):
+                 is_train = True,
+                 good_value = 0,
+                 anom_value = 1):
         assert category in MVTEC_CATEGORIES
         self.image_transform = transforms.Compose(
             [
@@ -54,7 +56,7 @@ class MVTecDataset(Dataset):
                 ]
             )
         self.is_train = is_train
-        self.good_value = -1
+        self.good_value = 0
         self.anom_value = 1
 
     def __getitem__(self, index):

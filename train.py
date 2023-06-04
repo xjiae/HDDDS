@@ -46,18 +46,22 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs):
     x, y, w = x.cuda(), y.cuda(), w.cuda()
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(-1)
-      loss = loss_fn((y_pred+1)/2, (y+1)/2) # Make -1/+1 value into 0/1 for BCE Loss
+      loss = loss_fn(y_pred, y)
       if phase == "train":
         loss.backward()
         optimizer.step()
     num_processed += x.size(0)
-    num_corrects += torch.sum(y == torch.sign(y_pred))
+    num_corrects += torch.sum(y == (y_pred > 0.5))
     running_loss += loss.item()
     avg_loss, avg_acc = (running_loss / num_processed), (num_corrects / num_processed)
     desc_str = f"[train]" if phase == "train" else "[valid]"
     desc_str += f" processed {num_processed}, loss {avg_loss:.4f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
-  return model, running_loss / num_processed, num_corrects / num_processed # model, avg loss, avg acc
+  return {
+      "model" : model,
+      "avg_loss" : running_loss / num_processed,
+      "avg_acc" : running_corrects / num_processed
+    }
 
 
 # Sliding tbular stuff
@@ -82,6 +86,7 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
         loss.backward()
         optimizer.step()
     num_processed += x.size(0)
+    num_corrects += torch.sum(y == (y_pred > 0.5)) 
     running_loss += loss.item()
     avg_loss = (running_loss / num_processed)
     desc_str = f"[train]" if phase == "train" else "[valid]"
@@ -89,6 +94,11 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
     pbar.set_description(desc_str)
   return model, running_loss / num_processed # model, avg loss
 
+  return {
+      "model" : model,
+      "avg_loss" : running_loss / num_processed,
+      "avg_acc" : running_corrects / num_processed
+    }
 
 # Big train function
 def train(model, dataset_name, configs, saveto_prefix=None):

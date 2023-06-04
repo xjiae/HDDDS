@@ -182,7 +182,7 @@ class MyFastResA(XwModel):
     elif self.return_mode == "two_class":
       anom_prob = (z + 1) / 2
       good_prob = 1 - anom_prob
-      return torch.cat([good_prob, anom_prob]) # (N,2)
+      return torch.cat([good_prob, anom_prob], dim=1) # (N,2)
     else:
       return ret
 

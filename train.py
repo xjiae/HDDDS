@@ -22,14 +22,14 @@ class TrainConfigs:
     self.models_saveto_dir = models_saveto_dir
     self.loaders_kwargs = loaders_kwargs
 
-DEFAULT_MVTEC_LOADER_CONFIGS = { "categories" : ["all"] }
-DEFAULT_HAI_LOADER_CONFIGS = {}
-DEFAULT_SWAT_LOADER_CONFIGS = {}
-DEFAULT_WADI_LOADER_CONFIGS = {}
-DEFAULT_HAI_SLIDING_LOADER_CONFIGS = { "window_size" : 100 }
-DEFAULT_SWAT_SLIDING_LOADER_CONFIGS = { "window_size" : 100}
-DEFAULT_WADI_SLIDING_LOADER_CONFIGS = { "window_size" : 100 }
-DEFAULT_CUAD_LOADER_CONFIGS = {}
+DEFAULT_MVTEC_LOADER_KWARGS = { "categories" : ["all"] }
+DEFAULT_HAI_LOADER_KWARGS = {}
+DEFAULT_SWAT_LOADER_KWARGS = {}
+DEFAULT_WADI_LOADER_KWARGS = {}
+DEFAULT_HAI_SLIDING_LOADER_KWARGS = { "window_size" : 100 }
+DEFAULT_SWAT_SLIDING_LOADER_KWARGS = { "window_size" : 100}
+DEFAULT_WADI_SLIDING_LOADER_KWARGS = { "window_size" : 100 }
+DEFAULT_CUAD_LOADER_KWARGS = {}
 
 
 # Run a single epoch for mvtec
@@ -46,7 +46,7 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs):
     x, y, w = x.cuda(), y.cuda(), w.cuda()
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(-1)
-      loss = loss_fn(y_pred, y)
+      loss = loss_fn(y_pred.double(), y.double())
       if phase == "train":
         loss.backward()
         optimizer.step()
@@ -60,7 +60,7 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs):
   return {
       "model" : model,
       "avg_loss" : running_loss / num_processed,
-      "avg_acc" : running_corrects / num_processed
+      "avg_acc" : num_corrects / num_processed
     }
 
 
@@ -78,30 +78,27 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
     _ = optimizer.zero_grad() if phase == "train" else None
     x, y, w, l = x.cuda(), y.cuda(), w.cuda(), l.cuda()
     with torch.set_grad_enabled(phase == "train"):
-      y_pred = torch.sigmoid(model(x).view(y.shape))
-      
+      y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
       loss = loss_fn(y_pred.double(), y.double())
       # breakpoint()
       if phase == "train":
         loss.backward()
         optimizer.step()
     num_processed += x.size(0)
-    num_corrects += torch.sum(y == (y_pred > 0.5)) 
+    num_corrects += torch.sum(y == (y_pred > 0.5))
     running_loss += loss.item()
-    avg_loss = (running_loss / num_processed)
+    avg_loss, avg_acc = (running_loss / num_processed), (num_corrects / num_processed)
     desc_str = f"[train]" if phase == "train" else "[valid]"
-    desc_str += f" processed {num_processed}, loss {avg_loss:.5f}"
+    desc_str += f" processed {num_processed}, loss {avg_loss:.5f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
-  return model, running_loss / num_processed # model, avg loss
-
   return {
       "model" : model,
       "avg_loss" : running_loss / num_processed,
-      "avg_acc" : running_corrects / num_processed
+      "avg_acc" : num_corrects / num_processed
     }
 
 # Big train function
-def train(model, dataset_name, configs, saveto_prefix=None):
+def train(model, dataset_name, configs, saveto_filename_prefix=None):
   if dataset_name == "mvtec":
     get_loaders_func = get_mvtec_dataloaders
     run_once_func = run_once_mvtec
@@ -149,8 +146,8 @@ def train(model, dataset_name, configs, saveto_prefix=None):
     print(f"# epoch {epoch}/{configs.num_epochs}")
     train_stats = run_once_func(model, train_loader, optimizer, "train", configs)
     valid_stats = run_once_func(model, valid_loader, optimizer, "valid", configs)
-    _, train_loss, train_acc = train_stats
-    _, valid_loss, valid_acc = valid_stats
+    train_loss, train_acc = train_stats["avg_loss"], train_stats["avg_acc"]
+    valid_loss, valid_acc = valid_stats["avg_loss"], valid_stats["avg_acc"]
     desc_str = f"train (loss {train_loss:.4f}, acc {train_acc:.4f}), "
     desc_str += f"valid (loss {valid_loss:4f}, acc {valid_acc:.4f})"
     print(desc_str)

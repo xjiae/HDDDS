@@ -5,7 +5,6 @@ import torchvision
 
 from .fastflow import *
 
-
 # The two-argument model
 class XwModel(nn.Module):
   def __init__(self, in_shape, out_shape, w_shape=None):
@@ -23,7 +22,10 @@ class XwModel(nn.Module):
 
 # A simple conv + feed forward network
 class SimpleNet(XwModel):
-  def __init__(self, in_shape, out_shape, linear_dim=128, auto_reshape=True):
+  def __init__(self, in_shape, out_shape,
+               linear_dim = 128,
+               auto_reshape = True,
+               softmax_output = True):
     super(SimpleNet, self).__init__(in_shape, out_shape, w_shape=in_shape)
     self.linear_dim = linear_dim
     self.norm1 = nn.LayerNorm(self.in_dim)
@@ -45,6 +47,7 @@ class SimpleNet(XwModel):
     )
 
     self.auto_reshape = auto_reshape
+    self.softmax_output = softmax_output
 
   def forward(self, x, w=None):
     N = x.size(0) # N is batch dim
@@ -62,15 +65,19 @@ class SimpleNet(XwModel):
     z = self.linears(z) # (N,out_dim)
 
     # If it's classification we do a normalization
-    if len(self.out_shape) == 1:
-      return z.softmax(dim=1)
-    else:
-      return z.view(N,*self.out_shape)
+    if self.softmax_output:
+      z = torch.sigmoid(z) if z.size(1) == 1 else z.softmax(dim=1)
+
+    return z.view(N, *self.out_shape)
 
 
 # A simple LSTM implementation
 class SimpleLSTM(XwModel):
-  def __init__(self, in_shape, out_shape, hidden_dim=128, auto_reshape=True, return_mode="last", softmax_output=True):
+  def __init__(self, in_shape, out_shape,
+               hidden_dim = 128,
+               auto_reshape = True,
+               return_mode = "last",
+               softmax_output = True):
     super(SimpleLSTM, self).__init__(in_shape, out_shape, w_shape=in_shape)
     self.hidden_dim = hidden_dim
     self.lstm1 = nn.LSTM(input_size=2*self.in_dim, hidden_size=hidden_dim, batch_first=True)
@@ -98,7 +105,7 @@ class SimpleLSTM(XwModel):
     z = z.view(N,L,*self.out_shape)
 
     if self.softmax_output:
-      z = z.softmax(dim=2)
+      z = torch.sigmoid(z) if z.size(2) == 1 else z.softmax(dim=2)
 
     if self.return_mode == "last":
       return z[:,-1]
@@ -110,20 +117,17 @@ class SimpleLSTM(XwModel):
     elif self.return_mode == "mean":
       max = torch.mean(z, dim=3)[0]
       return max
-
     elif self.return_mode == "two_class":
-      assert self.out_shape == (1,)
-      z_last = z[:,-1]
-      anom_prob = torch.sigmoid(z_last)
+      assert self.softmax_output and z.size(2) == 1
+      anom_prob = z[:,-1]
       good_prob = 1 - anom_prob
       return  torch.cat([good_prob, anom_prob], dim=1) #(N, 2)
-    
     
     else:
       raise NotImplementedError()
 
 
-# x --[fastflow]--> (x, hmap, w) --[resnet]--> [-1,+1]
+# x --[fastflow]--> (x, hmap, w) --[resnet]--> [0,1]
 class MyFastResA(XwModel):
   def __init__(self,
                in_shape = (3,256,256),
@@ -184,24 +188,3 @@ class MyFastResA(XwModel):
     else:
       return ret
 
-
-# Use this to explain one single x (no batch!)
-class XWrapper(nn.Module):
-  def __init__(self, model, x, auto_reshape=True):
-    super(XWrapper, self).__init__()
-    # assert isinstance(model, XwModel)
-    # assert model.in_shape == x.shape
-    self.model = model
-    self.x = x
-    self.auto_reshape = auto_reshape
-  
-  def forward(self, w):
-    N = w.size(0)
-    w = w.view(N, *self.x.shape) if self.auto_reshape else w
-    x = torch.stack(N * [self.x])
-    y = self.model(x, w)
-    # Check if the probablities sum to 1
-    if y.ndim == 2 and not torch.allclose(y.sum(dim=1), torch.ones(N).to(w.device)):
-      return y.softmax(dim=1)
-    else:
-      return y

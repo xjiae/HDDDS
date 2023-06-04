@@ -10,11 +10,13 @@ from hddds import *
 
 
 snet = SimpleNet(in_shape=(3,24,24), out_shape=(10,))
-
+lstm = SimpleLSTM(in_shape=(86,), out_shape=(1,), return_mode="two_class")
+ffres = MyFastResA(return_mode="two_class")
 
 x_to_explain = torch.rand(3,24,24)
 x_train = torch.rand(10,3,24,24)
 
+'''
 grad_explainer = Explainer(method="grad", model=snet)
 intg_explainer = Explainer(method="ig", model=snet)
 lime_explainer = Explainer(method="lime", model=snet, dataset_tensor=x_train)
@@ -35,4 +37,5 @@ print(f"lime {lime_alpha.shape}")
 
 shap_alpha = shap_explainer.get_explanation(x_test, lbl_test)   # SHAP
 print(f"shap {shap_alpha.shape}")
+'''
 

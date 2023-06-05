@@ -17,6 +17,7 @@ def summary(y_true, y_pred, score = True):
   
     if score:
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        recall = recall + 1e-10
         f1_scores = 2*recall*precision/(recall+precision)
         threshold = thresholds[np.argmax(f1_scores)]
         

@@ -130,7 +130,7 @@ def get_mvtec_explanation(model, dataset, configs,
   return stuff
 
 # The stuff for tabular
-def get_tabular_explanation(model, dataset, configs,
+def get_tabular_sliding_explanation(model, dataset, configs,
                           custom_desc = None,
                           misc_data = None,
                           num_todo = None,
@@ -196,7 +196,82 @@ def get_tabular_explanation(model, dataset, configs,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),
           "w_exps" : all_w_exps,
-          "ws" : all_ws,
+          "w_s" : all_ws,
+          "custom_desc" : custom_desc,
+          "misc_data" : misc_data,
+      }
+      torch.save(stuff, saveto)
+
+  return stuff
+
+# The stuff for tabular
+def get_tabular_explanation(model, dataset, configs,
+                          custom_desc = None,
+                          misc_data = None,
+                          num_todo = None,
+                          post_process_fun = None,
+                          save_every_k = 20,
+                          device = "cuda",
+                          do_save = True,
+                          saveto = None,
+                          seed = 1234):
+  assert isinstance(model, XwModel)
+  if do_save: assert saveto is not None
+  num_todo = len(dataset) if num_todo is None else num_todo
+  _, indices = train_test_split(range(len(dataset)), test_size=num_todo, stratify=dataset.y, random_state=seed)
+  dataset = torch.utils.data.Subset(dataset, indices)
+
+
+  if isinstance(configs, GradConfigs):
+    explainer = my_openxai.Explainer(method="grad", model=model)
+  elif isinstance(configs, IntGradConfigs):
+    explainer = my_openxai.Explainer(method="ig", model=model, dataset_tensor=configs.baseline)
+  elif isinstance(configs, LimeConfigs):
+    explainer = my_openxai.Explainer(method="lime", model=model, param_dict_lime=configs.param_dict_lime)
+  elif isinstance(configs, ShapConfigs):
+    explainer = my_openxai.Explainer(method="shap", model=model, param_dict_shap=configs.param_dict_shap)
+  else:
+    raise NotImplementedError()
+
+ 
+
+  all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
+  pbar = tqdm(range(num_todo))
+
+  for i in pbar:
+    x, y, w = dataset[i]
+    xx, yy, w = torch.from_numpy(x).unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), torch.from_numpy(w).to(device)
+
+
+    if configs.train_mode:
+      model.train().to(device)
+      ww_exp = explainer.get_explanation(xx, yy, configs.train_mode).view(x.shape)
+      model.eval().to(device)
+    else:
+      ww_exp = explainer.get_explanation(xx, yy).view(x.shape)
+    
+    if callable(post_process_fun):
+      w_exp = post_process_fun(ww_exp)
+    else:
+      w_exp = ww_exp.clamp(0,1).view(w.shape).float()
+
+    # all_xs.append(x.cpu())
+    # all_ys.append(y)
+    all_ws.append(w.cpu())
+    all_w_exps.append(w_exp.cpu())
+
+    # Speedhack: save once every few iters, or if we're near the end
+    if do_save and (i % save_every_k == 0 or len(pbar) - i < 2):
+      model_class = model.__class__
+      state_dict = model.state_dict()
+      stuff = {
+          "dataset" : dataset,
+          "model_class" : model_class,
+          "model_state_dict" : state_dict,
+          "method" : configs.desc_str(),
+          "num_total" : len(all_xs),
+          "w_exps" : all_w_exps,
+          "w_s" : all_ws,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }

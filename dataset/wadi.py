@@ -31,7 +31,7 @@ class WADIDataset(torch.utils.data.Dataset):
             train_explanation = pd.DataFrame(np.zeros((self.data.shape[0]-len(test_explanation), test_explanation.shape[1])))
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
         self.timestamp = self.data['epoch']
-        self.label = self.data['label']
+        self.y = self.data['label']
      
         
 
@@ -45,14 +45,24 @@ class WADIDataset(torch.utils.data.Dataset):
     
     
 class WADISlidingDataset(torch.utils.data.Dataset):
-    def __init__(self, window_size, stride=1, train = True):
-        if train:
+    def __init__(self, window_size, stride=1, contents = None):
+        assert contents in ["all", "train", "valid"]
+        if contents == "train":
             df =  pd.read_csv('data/wadi/train_processed.csv', index_col=0)
             self.explanation = pd.DataFrame(np.zeros((df.shape[0], df.shape[1]-2)))
-        else:
+        elif contents == "valid":
             df = pd.read_csv('data/wadi/test_processed.csv', index_col=0)
             self.explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
             attacks = df['label'].values
+        elif contents == "all":
+            train_data = pd.read_csv('data/wadi/train_processed.csv')
+            test_data = pd.read_csv('data/wadi/test_processed.csv')
+            df = pd.concat([train_data, test_data])
+            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
+            test_explanation = pd.read_csv('data/wadi/test_gt_exp.csv')
+            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+        else:
+            raise NotImplementedError()
         
       
         self.ts = df['epoch'].values
@@ -228,8 +238,8 @@ def get_wadi_sliding_dataloaders(window_size,
                                  mix_good_and_anom = True,
                                  train_frac = 0.7,
                                  seed = None):
-  good_dataset = WADISlidingDataset(window_size=window_size, stride=stride, train=True)
-  anom_dataset = WADISlidingDataset(window_size=window_size, stride=stride, train=False)
+  good_dataset = WADISlidingDataset(window_size=window_size, stride=stride, contents="train")
+  anom_dataset = WADISlidingDataset(window_size=window_size, stride=stride, contents="valid")
 
   torch.manual_seed(1234 if seed is None else seed)
   if mix_good_and_anom:

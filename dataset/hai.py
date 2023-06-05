@@ -36,7 +36,7 @@ class HAIDataset(torch.utils.data.Dataset):
             train_explanation = pd.DataFrame(np.zeros((self.data.shape[0]-len(test_explanation), test_explanation.shape[1])))
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
         self.timestamp = self.data['epoch']
-        self.label = self.data['label']
+        self.y = self.data['label']
      
         
 
@@ -53,15 +53,25 @@ class HAIDataset(torch.utils.data.Dataset):
 
 
 class HAISlidingDataset(torch.utils.data.Dataset):
-    def __init__(self, window_size, stride=1, train = True):
-
-        if train:
+    def __init__(self, window_size, stride=1, contents=None):
+        assert contents in ["all", "train", "valid"]
+        if contents == "train":
             df =  pd.read_csv('data/hai/train_processed.csv', index_col=0)
             self.explanation = pd.DataFrame(np.zeros((df.shape[0], df.shape[1]-2)))
             
-        else:
+        elif contents == "valid":
             df = pd.read_csv('data/hai/test_processed.csv', index_col=0)
             self.explanation = pd.read_csv('data/hai/test_gt_exp.csv')
+        elif contents == "all":
+            train_data = pd.read_csv('data/hai/train_processed.csv')
+            test_data = pd.read_csv('data/hai/test_processed.csv')
+            df = pd.concat([train_data, test_data])
+            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
+            test_explanation = pd.read_csv('data/hai/test_gt_exp.csv')
+            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+        else:
+            raise NotImplementedError()
+            
             
         
       
@@ -215,8 +225,10 @@ def normalize(df, min, max):
 def get_hai_dataloaders(normalize = False,
                         train_batch_size = 32,
                         valid_batch_size = 32,
+                        test_batch_size = 32,
                         mix_good_and_anom = True,
                         train_frac = 0.7,
+                        test_frac = 0.2,
                         seed = None):
   good_dataset = HAIDataset(contents="train", raw=normalize)
   anom_dataset = HAIDataset(contents="valid", raw=normalize)
@@ -226,16 +238,24 @@ def get_hai_dataloaders(normalize = False,
     concats = tud.ConcatDataset([good_dataset, anom_dataset])
     total = len(concats)
     num_train = int(total * train_frac)
+    num_test = int(total * test_frac)
     trains, valids = tud.random_split(concats, [num_train, total - num_train])
+    # valids, tests = tud.random_split(valids, [total - num_train - num_test, num_test])
   else:
     trains, valids = good_dataset, anom_dataset
+    # total = len(valids)
+    # valids, tests = tud.random_split(valids, [total - num_test, num_test])
+    
 
   train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
   valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+#   test_loader = tud.DataLoader(tests, batch_size=valid_batch_size, shuffle=True)
   return { "train_dataset" : trains,
            "valid_dataset" : valids,
+           "test_dataset" : tests,
            "train_dataloader" : train_loader,
-           "valid_dataloader" : valid_loader
+           "valid_dataloader" : valid_loader,
+        #    "test_dataloader" : test_loader
           }
 
 
@@ -246,8 +266,8 @@ def get_hai_sliding_dataloaders(window_size,
                                 mix_good_and_anom = True,
                                 train_frac = 0.7,
                                 seed = None):
-  good_dataset = HAISlidingDataset(window_size=window_size, stride=stride, train=True)
-  anom_dataset = HAISlidingDataset(window_size=window_size, stride=stride, train=False)
+  good_dataset = HAISlidingDataset(window_size=window_size, stride=stride, contents="train")
+  anom_dataset = HAISlidingDataset(window_size=window_size, stride=stride, contents="valid")
 
   torch.manual_seed(1234 if seed is None else seed)
   if mix_good_and_anom:

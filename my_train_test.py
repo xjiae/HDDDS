@@ -16,7 +16,7 @@ ffres = MyFastResA(return_mode="scalar_score")
 hai_lstm = SimpleLSTM(in_shape=(86,), out_shape=(1,), return_mode="last", softmax_output=True)
 swat_lstm = SimpleLSTM(in_shape=(51,), out_shape=(1,), return_mode="last", softmax_output=True)
 wadi_lstm = SimpleLSTM(in_shape=(127,), out_shape=(1,), return_mode="last", softmax_output=True)
-
+hai_lr = LogisticRegression(in_shape=(86,), out_shape=(1,))
 
 mvtec_configs = TrainConfigs(num_epochs=2, loaders_kwargs=DEFAULT_MVTEC_LOADER_KWARGS)
 
@@ -30,3 +30,7 @@ swat_configs = TrainConfigs(num_epochs=2, loaders_kwargs=DEFAULT_SWAT_LOADER_KWA
 swat_sliding_configs = TrainConfigs(num_epochs=2, loaders_kwargs=DEFAULT_SWAT_SLIDING_LOADER_KWARGS)
 
 
+# train(hai_lstm, 'hai-sliding', hai_sliding_configs)
+# train(swat_lstm, 'swat-sliding', hai_sliding_configs)
+# train(wadi_lstm, 'wadi-sliding', hai_sliding_configs)
+train(hai_lr, 'hai', hai_configs, saveto_filename_prefix="lr")

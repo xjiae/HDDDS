@@ -32,6 +32,6 @@ avg_gt_ratio = np.mean(gt_ratio)
 
 print(f"{fea_num} & {ano_cnt} & {total - ano_cnt} & {total} & {(ano_cnt/total)*100:.2f}\% \\\\")
 
-print(f"{total * fea_num} & {avg_fea:.4f} & {avg_gt_ratio*100:.2f}\% \\\\")
+print(f"{ano_cnt * fea_num} & {avg_fea:.4f} & {avg_gt_ratio*100:.2f}\% \\\\")
 breakpoint()
     

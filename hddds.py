@@ -41,9 +41,8 @@ mvtec_dir = '../mvtec-ad'
 
 # Returns the train and validation dataset
 def load_mvtec_data(category, seed=None):
-    
-    goods = MVTecDataset(mvtec_dir, category, 256, is_train=True)
-    anoms = MVTecDataset(mvtec_dir, category, 256, is_train=False)
+    goods = MVTecDataset(root=mvtec_dir, category=category, input_size=256, is_train=True)
+    anoms = MVTecDataset(root=mvtec_dir, category=category, input_size=256, is_train=False)
     concats = tudata.ConcatDataset([goods, anoms])
     # total = len(concats)
     # num_train = int(total * args.train_frac)
@@ -55,38 +54,59 @@ def load_mvtec_data(category, seed=None):
     return concats
 
 def load_swat_data(ds_name):
-    train = 'train' in ds_name
+    
     raw = 'raw' in ds_name
-    all = 'all' in ds_name
+    
     sliding = 'sliding' in ds_name
+    contents = None
+    if 'train' in ds_name:
+        contents = 'train'
+    elif 'valid' in ds_name:
+        contents = 'valid'
+    else:
+        contents = "all"
     if sliding:
         window_size = get_window(ds_name)
-        return SWaTSlidingDataset(window_size, train = train)
+        return SWaTSlidingDataset(window_size, contents=contents)
     else:
-        return SWaTDataset(all = all, train = train, raw=raw)
+        return SWaTDataset(contents=contents, raw=raw)
     
 def load_wadi_data(ds_name):
-    train = 'train' in ds_name
+    contents = None
+    if 'train' in ds_name:
+        contents = 'train'
+    elif 'valid' in ds_name:
+        contents = 'valid'
+    else:
+        contents = "all"
     raw = 'raw' in ds_name
-    all = 'all' in ds_name
+    
     sliding = 'sliding' in ds_name
     if sliding:
         window_size = get_window(ds_name)
-        return WADISlidingDataset(window_size, train = train)
+        return WADISlidingDataset(window_size, contents=contents)
     else:
-        return WADIDataset(all = all, train = train, raw=raw)
+        return WADIDataset(contents=contents, raw=raw)
 
 def load_hai_data(ds_name):
-    train = 'train' in ds_name
+
+    contents = None
+    if 'train' in ds_name:
+        contents = 'train'
+    elif 'valid' in ds_name:
+        contents = 'valid'
+    else:
+        contents = "all"
+            
     raw = 'raw' in ds_name
-    all = 'all' in ds_name
+  
     sliding = 'sliding' in ds_name
     
     if sliding:
         window_size = get_window(ds_name)
-        return HAISlidingDataset(window_size, train = train)
+        return HAISlidingDataset(window_size, contents=contents)
     else:
-        return HAIDataset(all = all, train = train, raw=raw)
+        return HAIDataset(contents=contents, raw=raw)
        
 def get_window(ds_name):
     digit_str = re.findall(r'\d+', ds_name)

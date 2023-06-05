@@ -2,6 +2,7 @@ import os
 from glob import glob
 
 import torch
+import torch.utils.data as tud
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision import transforms
@@ -108,21 +109,19 @@ def get_mvtec_dataloaders(categories,
 
     torch.manual_seed(1234 if seed is None else seed)
     if mix_good_and_anom:
-      concats = torch.utils.data.ConcatDataset(good_datasets + anom_datasets)
+      concats = tud.ConcatDataset(good_datasets + anom_datasets)
       total = len(concats)
       num_train = int(total * train_frac)
-      trains, valids = torch.utils.data.random_split(concats, [num_train, total - num_train])
+      trains, valids = tud.random_split(concats, [num_train, total - num_train])
     else:
-      trains = torch.utils.data.ConcatDataset(good_dataset)
-      valids = torch.utils.data.ConcatDataset(anom_dataset)
+      trains = tud.ConcatDataset(good_dataset)
+      valids = tud.ConcatDataset(anom_dataset)
 
-    train_loader = torch.utils.data.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
-    valid_loader = torch.utils.data.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+    train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
+    valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
     return { "train_dataset" : trains,
              "valid_dataset" : valids,
              "train_dataloader" : train_loader,
-             "valid_dataloader" : valid_loader
-            }
-
+             "valid_dataloader" : valid_loader }
 
 

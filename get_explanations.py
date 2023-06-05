@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+import torch.utils.data as tud
+
 from dataset import *
 from models import *
 
@@ -74,10 +76,14 @@ def get_mvtec_explanation(model, dataset, configs,
                           save_every_k = 20,
                           device = "cuda",
                           do_save = True,
-                          saveto = None):
+                          saveto = None,
+                          seed = 1234):
   assert isinstance(model, XwModel)
   if do_save: assert saveto is not None
   num_todo = len(dataset) if num_todo is None else num_todo
+  torch.manual_seed(1234)
+  perm = torch.randperm(len(dataset))
+  dataset = tud.Subset(dataset, indices=perm)
 
   if isinstance(configs, GradConfigs):
     explainer = my_openxai.Explainer(method="grad", model=model)

@@ -227,8 +227,7 @@ def get_wadi_dataloaders(normalize = False,
   return { "train_dataset" : trains,
            "valid_dataset" : valids,
            "train_dataloader" : train_loader,
-           "valid_dataloader" : valid_loader
-          }
+           "valid_dataloader" : valid_loader }
 
 
 def get_wadi_sliding_dataloaders(window_size,

@@ -3,6 +3,14 @@ import torch
 import torch.nn as nn
 import torchvision
 
+import transformers
+from transformers import (
+  AutoTokenizer,
+  AutoModelForQuestionAnswering,
+)
+
+from transformers.modeling_outputs import QuestionAnsweringModelOutput
+
 from .fastflow import *
 
 # The two-argument model
@@ -187,4 +195,23 @@ class MyFastResA(XwModel):
       return torch.cat([good_prob, anom_prob], dim=1) # (N,2)
     else:
       return ret
+
+
+#
+class SquadModel(XwModel):
+  def __init__(self,
+               name_or_model,
+               tokenizer,
+               pretrained_kwargs_dict = {}):
+    super(SquadModel, self).__init__(in_shape=(-1,), out_shape=(-1,), w_shape=(-1,))
+    if isinstance(name_or_model, str):
+      self.model = AutoModelForQuestionAnswering.from_pretrained(name_or_model, **pretrained_kwargs_dict)
+    else:
+      assert isinstance(name_or_model, nn.Module)
+      self.model = name_or_model
+
+  def forward(self, w=None, **kwargs):
+    outputs = self.model(**kwargs)
+    assert isinstance(outputs, QuestionAnsweringModelOutput)
+    return outputs
 

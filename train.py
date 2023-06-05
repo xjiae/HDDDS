@@ -29,7 +29,7 @@ DEFAULT_WADI_LOADER_KWARGS = {}
 DEFAULT_HAI_SLIDING_LOADER_KWARGS = { "window_size" : 100 }
 DEFAULT_SWAT_SLIDING_LOADER_KWARGS = { "window_size" : 100}
 DEFAULT_WADI_SLIDING_LOADER_KWARGS = { "window_size" : 100 }
-DEFAULT_CUAD_LOADER_KWARGS = {}
+DEFAULT_SQUAD_LOADER_KWARGS = {}
 
 
 # Run a single epoch for mvtec
@@ -57,11 +57,9 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs):
     desc_str = f"[train]" if phase == "train" else "[valid]"
     desc_str += f" processed {num_processed}, loss {avg_loss:.4f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
-  return {
-      "model" : model,
-      "avg_loss" : running_loss / num_processed,
-      "avg_acc" : num_corrects / num_processed
-    }
+  return { "model" : model,
+           "avg_loss" : running_loss / num_processed,
+           "avg_acc" : num_corrects / num_processed }
 
 
 # Sliding tbular stuff
@@ -80,7 +78,6 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
       loss = loss_fn(y_pred.double(), y.double())
-      # breakpoint()
       if phase == "train":
         loss.backward()
         optimizer.step()
@@ -91,14 +88,54 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
     desc_str = f"[train]" if phase == "train" else "[valid]"
     desc_str += f" processed {num_processed}, loss {avg_loss:.5f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
-  return {
-      "model" : model,
-      "avg_loss" : running_loss / num_processed,
-      "avg_acc" : num_corrects / num_processed
+  return { "model" : model,
+           "avg_loss" : running_loss / num_processed,
+           "avg_acc" : num_corrects / num_processed }
+
+
+# squad training
+def run_once_squad(model, dataloader, optimizer, phase, configs):
+  assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
+  model = nn.DataParallel(model, device_ids=configs.device_ids)
+  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+
+  num_processed, running_loss = 0, 0.0
+  pbar = tqdm(dataloader)
+  for it, batch in enumerate(pbar):
+    _ = optimizer.zero_grad() if phase == "train" else None
+    inputs = {
+      "input_ids": batch[0],
+      "attention_mask": batch[1],
+      "token_type_ids": batch[2],
+      "start_positions": batch[3],
+      "end_positions": batch[4],
     }
+
+    with torch.set_grad_enabled(phase == "train"):
+      outputs = model(**inputs)
+      loss = outputs["loss"]  # This should be supplied by the model
+      # If multiple GPUs are used, collect them
+      if loss.numel() > 1:
+        loss = loss.sum()
+      if phase == "train":
+        loss.backward()
+        optimizer.step()
+
+    num_processed += batch[0].size(0)
+    running_loss += loss.item()
+    avg_loss = running_loss / num_processed
+    desc_str = f"[train]" if phase == "train" else "[valid]"
+    desc_str += f" processed {num_processed}, loss {avg_loss:.4f}"
+    pbar.set_description(desc_str)
+
+  return { "model" : model,
+           "avg_loss" : running_loss / num_processed }
+
 
 # Big train function
 def train(model, dataset_name, configs, saveto_filename_prefix=None):
+  dataset_name = dataset_name.lower()
+
   if dataset_name == "mvtec":
     get_loaders_func = get_mvtec_dataloaders
     run_once_func = run_once_mvtec
@@ -126,6 +163,10 @@ def train(model, dataset_name, configs, saveto_filename_prefix=None):
   elif dataset_name == "wadi-sliding":
     get_loaders_func = get_wadi_sliding_dataloaders
     run_once_func = run_once_sliding_tabular
+
+  elif dataset_name == "squad":
+    get_loaders_func = get_squad_dataloaders
+    run_once_func = run_once_squad
 
   else:
     raise NotImplementedError()

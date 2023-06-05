@@ -4,5 +4,5 @@ from .mvtec import *
 from .swat import *
 from .hai import *
 from .wadi import *
-from .cuad import *
+from .squad import *
 

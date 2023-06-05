@@ -159,3 +159,18 @@ def get_dataset_pos_mask(dataset):
         pos_mask.append(is_positive)
     return pos_mask
 
+
+def get_squad_dataloaders(tokenizer_or_name = "roberta-base",
+                          train_batch_size = 8,
+                          valid_batch_size = 8,
+                          **kwargs):
+  trains = SquadDataset(tokenizer_or_name, is_train=True, **kwargs)
+  valids = SquadDataset(tokenizer_or_name, is_train=False, **kwargs)
+  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
+  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+  return { "train_dataset" : trains,
+           "valid_dataset" : valids,
+           "train_dataloader" : train_loader,
+           "valid_dataloader" : valid_loader }
+
+

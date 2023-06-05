@@ -94,6 +94,7 @@ def get_mvtec_dataloaders(categories,
                           valid_batch_size = 8,
                           mix_good_and_anom = True,
                           train_frac = 0.7,
+                          shuffle = True,
                           seed = None):
     good_datasets = []
     anom_datasets = []
@@ -114,8 +115,13 @@ def get_mvtec_dataloaders(categories,
       trains = tud.ConcatDataset(good_dataset)
       valids = tud.ConcatDataset(anom_dataset)
 
-    train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
-    valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+    trains_perm = torch.randperm(len(trains)) if shuffle else torch.tensor(range(len(trains)))
+    valids_perm = torch.randperm(len(valids)) if shuffle else torch.tensor(range(len(valids)))
+    trains = tud.Subset(trains, indices=trains_perm)
+    valids = tud.Subset(valids, indices=valids_perm)
+
+    train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=shuffle)
+    valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=shuffle)
     return { "train_dataset" : trains,
              "valid_dataset" : valids,
              "train_dataloader" : train_loader,

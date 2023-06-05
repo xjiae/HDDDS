@@ -107,7 +107,7 @@ def run_once_squad(model, dataloader, optimizer, phase, configs):
       "input_ids": batch[0],
       "attention_mask": batch[1],
       "token_type_ids": batch[2],
-      "start_positions": batch[3],
+      "start_positions": batch[3],  # Giving start and end position should have model yield loss
       "end_positions": batch[4],
     }
 
@@ -128,12 +128,17 @@ def run_once_squad(model, dataloader, optimizer, phase, configs):
     desc_str += f" processed {num_processed}, loss {avg_loss:.4f}"
     pbar.set_description(desc_str)
 
+  # There is no meaningful acc to track for this thing, so don't
   return { "model" : model,
-           "avg_loss" : running_loss / num_processed }
+           "avg_loss" : running_loss / num_processed,
+           "avg_acc" : 0.0 }
 
 
 # Big train function
-def train(model, dataset_name, configs, saveto_filename_prefix=None):
+def train(model, dataset_name, configs,
+          save_when = "best_acc",
+          saveto_filename_prefix = None):
+  assert save_when in ["best_acc", "best_loss"]
   dataset_name = dataset_name.lower()
 
   if dataset_name == "mvtec":
@@ -176,7 +181,7 @@ def train(model, dataset_name, configs, saveto_filename_prefix=None):
   valid_loader = loaders_dict["valid_dataloader"]
   optimizer = torch.optim.Adam(model.parameters(), lr=configs.lr)
 
-  best_valid_acc = 0.0
+  best_valid_loss, best_valid_acc = 0.0, 0.0
   best_model_weights = copy.deepcopy(model.state_dict())
 
   print(f"Training with {dataset_name}")
@@ -196,7 +201,8 @@ def train(model, dataset_name, configs, saveto_filename_prefix=None):
     saveto = f"{dataset_name}_epoch{epoch}.pt"
     saveto = saveto if saveto_filename_prefix is None else saveto_filename_prefix + "_" + saveto
     saveto = os.path.join(configs.models_saveto_dir, saveto)
-    if valid_acc > best_valid_acc:
+    if ((save_when == "best_acc" and valid_acc >= best_valid_acc)
+        or (save_when == "best_loss" and valid_loss <= best_valid_loss)):
       best_valid_acc = valid_acc
       best_model_weights = copy.deepcopy(model.state_dict())
       torch.save(best_model_weights, saveto)

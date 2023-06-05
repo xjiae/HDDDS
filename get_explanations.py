@@ -1,3 +1,4 @@
+import copy
 import torch
 import torch.nn as nn
 import numpy as np
@@ -164,8 +165,6 @@ def get_tabular_explanation(model, dataset, configs,
   else:
     raise NotImplementedError()
 
- 
-
   all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
   pbar = tqdm(range(num_todo))
 
@@ -207,6 +206,99 @@ def get_tabular_explanation(model, dataset, configs,
           "misc_data" : misc_data,
       }
       torch.save(stuff, saveto)
+
+  return stuff
+
+
+# The stuff for squad
+def get_squad_explanation(model, dataset, configs,
+                          custom_desc = None,
+                          misc_data = None,
+                          num_todo = None,
+                          post_process_fun = None,
+                          save_every_k = 20,
+                          device = "cuda",
+                          do_save = True,
+                          saveto = None,
+                          seed = 1234):
+  assert isinstance(model, MySquadModel)
+  if do_save: assert saveto is not None
+  num_todo = len(dataset) if num_todo is None else num_todo
+  torch.manual_seed(1234)
+  perm = torch.randperm(len(dataset))
+  dataset = tud.Subset(dataset, indices=perm)
+
+  # Wrap so that it now directly takes inputs_embeds
+  amodel = copy.deepcopy(model).eval().to(device)
+  bmodel = copy.deepcopy(model).eval().to(device)
+  amodel.return_mode = "start_logits"
+  bmodel.return_mode = "end_logits"
+
+  embed_fn = amodel.model.get_input_embeddings()
+
+  if isinstance(configs, GradConfigs):
+    aexplainer = my_openxai.Explainer(method="grad", model=amodel)
+    bexplainer = my_openxai.Explainer(method="grad", model=bmodel)
+  elif isinstance(configs, IntGradConfigs):
+    aexplainer = my_openxai.Explainer(method="ig", model=amodel, dataset_tensor=configs.baseline)
+    bexplainer = my_openxai.Explainer(method="ig", model=bmodel, dataset_tensor=configs.baseline)
+  elif isinstance(configs, LimeConfigs):
+    aexplainer = my_openxai.Explainer(method="lime", model=amodel, param_dict_lime=configs.param_dict_lime)
+    bexplainer = my_openxai.Explainer(method="lime", model=bmodel, param_dict_lime=configs.param_dict_lime)
+  elif isinstance(configs, ShapConfigs):
+    aexplainer = my_openxai.Explainer(method="shap", model=amodel, param_dict_shap=configs.param_dict_shap)
+    bexplainer = my_openxai.Explainer(method="shap", model=bmodel, param_dict_shap=configs.param_dict_shap)
+  else:
+    raise NotImplementedError()
+
+  pbar = tqdm(range(num_todo))
+  for i in pbar:
+    datai = dataset[i]
+    input_ids = datai[0].to(device).unsqueeze(0)
+    attn_mask = datai[1].to(device).unsqueeze(0)
+    start_pos = datai[3].to(device).unsqueeze(0)
+    end_pos = datai[4].to(device).unsqueeze(0)
+    inputs_embeds = embed_fn(input_ids)
+
+    print("yooo")
+    print(inputs_embeds.shape)
+    print(start_pos)
+
+    ww_aexp = aexplainer.get_explanation(inputs_embeds, start_pos)
+    ww_bexp = bexplainer.get_explanation(inputs_embeds, end_pos)
+
+    return model, ww_aexp, ww_bexp
+
+    '''
+    # ww_exp : (3,256,256), need to compress it to (1,256,256)
+    ww_exp = explainer.get_explanation(xx, yy).view(x.shape)
+    if callable(post_process_fun):
+      w_exp = post_process_fun(ww_exp)
+    else:
+      w_exp = ww_exp.max(dim=0).values.clamp(0,1).view(w.shape).float()
+
+    all_xs.append(x.cpu())
+    all_ys.append(y)
+    all_ws.append(w.cpu())
+    all_w_exps.append(w_exp.cpu())
+
+    # Speedhack: save once every few iters, or if we're near the end
+    if do_save and (i % save_every_k == 0 or len(pbar) - i < 2):
+      model_class = model.__class__
+      state_dict = model.state_dict()
+      stuff = {
+          "dataset" : dataset,
+          "model_class" : model_class,
+          "model_state_dict" : state_dict,
+          "method" : configs.desc_str(),
+          "num_total" : len(all_xs),
+          "w_exps" : all_w_exps,
+          "ws" : all_ws,
+          "custom_desc" : custom_desc,
+          "misc_data" : misc_data,
+      }
+      torch.save(stuff, saveto)
+    '''
 
   return stuff
 

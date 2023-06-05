@@ -198,20 +198,52 @@ class MyFastResA(XwModel):
 
 
 #
-class SquadModel(XwModel):
+class MySquadModel(XwModel):
   def __init__(self,
                name_or_model,
-               tokenizer,
-               pretrained_kwargs_dict = {}):
-    super(SquadModel, self).__init__(in_shape=(-1,), out_shape=(-1,), w_shape=(-1,))
+               input_mode = "dict",
+               return_mode = "all",
+               embeds_dim = 768,
+               auto_reshape = True, # Only really applies for embed_pts
+               pretrained_kwargs_dict= {}):
+    super(MySquadModel, self).__init__(in_shape=(embeds_dim,), out_shape=(-1,), w_shape=(embeds_dim,))
     if isinstance(name_or_model, str):
       self.model = AutoModelForQuestionAnswering.from_pretrained(name_or_model, **pretrained_kwargs_dict)
     else:
       assert isinstance(name_or_model, nn.Module)
       self.model = name_or_model
 
-  def forward(self, w=None, **kwargs):
-    outputs = self.model(**kwargs)
+    assert input_mode in ["inputs_embeds", "input_ids", "dict"]
+
+    self.input_mode = input_mode
+    self.return_mode = return_mode
+    self.embeds_dim = embeds_dim
+    self.auto_reshape = auto_reshape
+
+
+  def forward(self, x=None, w=None, **kwargs):
+    # Logical implies
+    if self.input_mode == "inputs_embeds":
+      if self.auto_reshape:
+        x = x.view(x.size(0),-1,self.embeds_dim)
+      outputs = self.model(inputs_embeds=x, **kwargs)
+    elif self.input_mode == "input_ids":
+      outputs = self.model(input_ids=x, **kwargs)
+    elif self.input_mode == "dict":
+      outputs = self.model(**kwargs)
+    else:
+      raise NotImplementedError
+
     assert isinstance(outputs, QuestionAnsweringModelOutput)
-    return outputs
+
+    if self.return_mode == "all":
+      return outputs
+    elif self.return_mode == "start_logits":
+      return outputs.start_logits
+    elif self.return_mode == "end_logits":
+      return outputs.end_logits
+    else:
+      raise NotImplementedError()
+
+
 

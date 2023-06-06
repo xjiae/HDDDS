@@ -82,7 +82,7 @@ def get_mvtec_explanation(model, dataset, configs,
   assert isinstance(model, XwModel)
   if do_save: assert saveto is not None
   num_todo = len(dataset) if num_todo is None else num_todo
-  torch.manual_seed(1234)
+  torch.manual_seed(seed)
   perm = torch.randperm(len(dataset))
   dataset = tud.Subset(dataset, indices=perm)
 
@@ -100,7 +100,9 @@ def get_mvtec_explanation(model, dataset, configs,
   model.eval().to(device)
 
   all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
-  pbar = tqdm(range(num_todo))
+  num_todo_indices = perm[:num_todo]
+  # pbar = tqdm(range(num_todo))
+  pbar = tqdm(num_todo_indices)
   for i in pbar:
     x, y, w = dataset[i]
     xx, yy, w = x.unsqueeze(0).to(device), torch.tensor([y]).to(device), w.to(device)
@@ -201,7 +203,7 @@ def get_tabular_sliding_explanation(model, dataset, configs,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),
           "w_exps" : all_w_exps,
-          "w_s" : all_ws,
+          "ws" : all_ws,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }
@@ -276,7 +278,7 @@ def get_tabular_explanation(model, dataset, configs,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),
           "w_exps" : all_w_exps,
-          "w_s" : all_ws,
+          "ws" : all_ws,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }

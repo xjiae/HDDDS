@@ -48,10 +48,10 @@ squad_configs = TrainConfigs(num_epochs=2, loaders_kwargs=DEFAULT_SQUAD_LOADER_K
 
 # question = "'To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?'"
 
-train(swat_lr, 'swat', swat_configs, saveto_filename_prefix="lr")
-train(wadi_lr, 'wadi', wadi_configs, saveto_filename_prefix="lr")
-train(hai_lr, 'hai', hai_configs, saveto_filename_prefix="lr")
+# train(swat_lr, 'swat', swat_configs, saveto_filename_prefix="lr")
+# train(wadi_lr, 'wadi', wadi_configs, saveto_filename_prefix="lr")
+# train(hai_lr, 'hai', hai_configs, saveto_filename_prefix="lr")
 
-# train(swat_lstm, 'swat-sliding', swat_sliding_configs, saveto_filename_prefix="lstm")
-# train(wadi_lstm, 'wadi-sliding', wadi_sliding_configs, saveto_filename_prefix="lstm")
-# train(hai_lstm, 'hai-sliding', hai_sliding_configs, saveto_filename_prefix="lstm")
+train(swat_lstm, 'swat-sliding', swat_sliding_configs, saveto_filename_prefix="lstm")
+train(wadi_lstm, 'wadi-sliding', wadi_sliding_configs, saveto_filename_prefix="lstm")
+train(hai_lstm, 'hai-sliding', hai_sliding_configs, saveto_filename_prefix="lstm")

@@ -17,11 +17,10 @@ def evaluate(model, ds_name, exp):
     w_true = torch.cat(ret['ws']).numpy().flatten()
     w_pred = torch.cat(ret['w_exps']).numpy().flatten()
     print(len(w_pred))
-    breakpoint()
     
     acc, f1, fpr, fnr = summary(w_true, w_pred)
     saveto = open(f"results/{ds_name}.txt", "a")
-    saveto.write(f"{model} | {exp} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\ \n")
+    saveto.write(f"{model} | {exp} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}\n")
     saveto.close()
     
     
@@ -59,9 +58,9 @@ def explain(model_name, ds_name, exp):
     # mp = ds_name.replace("test", "")
     mp = ds_name.split("_")[0]
     if model_name == "lstm":
-        model_path = open(f"saved_models/{mp}-sliding_epoch2.pt", "rb") 
+        model_path = open(f"saved_models/{model_name}_{mp}-sliding_epoch2.pt", "rb") 
     else:
-        model_path = open(f"saved_models/lr_{mp}_epoch1.pt", "rb") 
+        model_path = open(f"saved_models/{model_name}_{mp}_epoch1.pt", "rb") 
         
     load = torch.load(model_path)
     model.load_state_dict(load)

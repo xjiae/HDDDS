@@ -86,10 +86,7 @@ class HAISlidingDataset(torch.utils.data.Dataset):
             R = L + self.window_size - 1
             if (self.ts[R]-self.ts[L]) == self.window_size - 1:
                 self.valid_idxs.append(L)
-                if 1 in self.labels[L : L + self.window_size - 1].values:
-                    self.y.append(1)
-                else:
-                    self.y.append(0)
+                self.y.append(self.labels.values[R])
                 
         self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
         self.n_idxs = len(self.valid_idxs)

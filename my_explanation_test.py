@@ -8,14 +8,18 @@ from utils import *
 from dataset import *
 import os
 import sys
-sys.path.insert(0, "/home/xjiae/HDDDS/")
+# sys.path.insert(0, "/home/xjiae/HDDDS/")
 def evaluate(model, ds_name, exp):
     
-    loadfrom = open(f"saved_explanations/{model}_{exp}_{ds_name}.pt", "rb")
+    # loadfrom = open(f"saved_explanations/{model}_{exp}_{ds_name}.pt", "rb")
+    loadfrom = open(f"/data2/xjiae/anton-files/{ds_name}_{exp}.pt", "rb")
     ret = torch.load(loadfrom)
-    w_true = torch.cat(ret['w_s']).numpy().flatten()
+    w_true = torch.cat(ret['ws']).numpy().flatten()
     w_pred = torch.cat(ret['w_exps']).numpy().flatten()
-    acc, f1, fpr, fnr = summary(w_true, w_pred, score = True)
+    print(len(w_pred))
+    breakpoint()
+    
+    acc, f1, fpr, fnr = summary(w_true, w_pred)
     saveto = open(f"results/{ds_name}.txt", "a")
     saveto.write(f"{model} | {exp} & {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\ \n")
     saveto.close()
@@ -69,11 +73,13 @@ def explain(model_name, ds_name, exp):
 if __name__== "__main__":
 
     data = ["swat_sliding_100_valid", "wadi_sliding_100_valid", "hai_sliding_100_valid"]
-    exps = ["grad","intg","lime"]
-    # exps = ["shap","lime"]
-    data = ["hai_100_test"]
-    exps = ["lime"]
-    m = "lr"
+    exps = ["grad","intg","lime", "shap"]
+    # exps = ["grad","intg"]
+    # data = ["squad"]
+    data = ["mvtec"]
+    # exps = ["lime"]
+    # m = "roberta"
+    m = "fastflow"
     for d in data:
         for exp in exps:
             print(f"Running {m} on {d} with {exp}:")

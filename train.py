@@ -114,7 +114,7 @@ def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
 
 
 # tbular stuff
-def run_once_tabular(model, dataloader, optimizer, phase, configs):
+def run_once_tabular(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
   _ = model.train().cuda() if phase == "train" else model.eval().cuda()
@@ -125,7 +125,7 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs):
   pbar = tqdm(dataloader)
   for it, (x, y, w) in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
-    x, y, w = x.cuda(), y.cuda(), w.cuda()
+    x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
       loss = loss_fn(y_pred.double(), y.double())

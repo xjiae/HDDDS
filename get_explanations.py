@@ -251,38 +251,37 @@ def get_squad_explanation(model, dataset, configs,
   else:
     raise NotImplementedError()
 
+  all_ws, all_w_exps = [], []
   pbar = tqdm(range(num_todo))
   for i in pbar:
     datai = dataset[i]
-    input_ids = datai[0].to(device).unsqueeze(0)
-    attn_mask = datai[1].to(device).unsqueeze(0)
-    start_pos = datai[3].to(device).unsqueeze(0)
-    end_pos = datai[4].to(device).unsqueeze(0)
+    input_ids = datai[0].to(device)
+    attn_mask = datai[1].to(device)
+    start_pos = datai[3].to(device)
+    end_pos = datai[4].to(device)
     inputs_embeds = embed_fn(input_ids)
 
-    print("yooo")
-    print(inputs_embeds.shape)
-    print(start_pos)
+    w = torch.zeros_like(input_ids)
+    for i in range(torch.min(start_pos, end_pos), torch.max(start_pos, end_pos)):
+      w[i] = 1
 
-    ww_aexp = aexplainer.get_explanation(inputs_embeds, start_pos)
-    ww_bexp = bexplainer.get_explanation(inputs_embeds, end_pos)
+    ww_aexp = aexplainer.get_explanation(inputs_embeds.unsqueeze(0), start_pos.view(1,1)).squeeze()
+    ww_bexp = bexplainer.get_explanation(inputs_embeds.unsqueeze(0), end_pos.view(1,1)).squeeze()
 
-    return model, ww_aexp, ww_bexp
-
-    '''
-    # ww_exp : (3,256,256), need to compress it to (1,256,256)
-    ww_exp = explainer.get_explanation(xx, yy).view(x.shape)
     if callable(post_process_fun):
-      w_exp = post_process_fun(ww_exp)
+      w_exp = post_process_fun(ww_aexp, ww_bexp)
     else:
-      w_exp = ww_exp.max(dim=0).values.clamp(0,1).view(w.shape).float()
+      w_aexp = ww_aexp.max(dim=1).values.clamp(0,1) * attn_mask
+      w_bexp = ww_bexp.max(dim=1).values.clamp(0,1) * attn_mask
 
-    all_xs.append(x.cpu())
-    all_ys.append(y)
+      exp_start = w_aexp.argmax()
+      exp_end = w_bexp.argmax()
+      w_exp = torch.zeros_like(w)
+      for i in range(torch.min(exp_start, exp_end), torch.max(exp_start, exp_end)):
+        w_exp[i] = 1
+
     all_ws.append(w.cpu())
     all_w_exps.append(w_exp.cpu())
-
-    # Speedhack: save once every few iters, or if we're near the end
     if do_save and (i % save_every_k == 0 or len(pbar) - i < 2):
       model_class = model.__class__
       state_dict = model.state_dict()
@@ -291,14 +290,14 @@ def get_squad_explanation(model, dataset, configs,
           "model_class" : model_class,
           "model_state_dict" : state_dict,
           "method" : configs.desc_str(),
-          "num_total" : len(all_xs),
+          "num_total" : len(all_ws),
           "w_exps" : all_w_exps,
           "ws" : all_ws,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }
       torch.save(stuff, saveto)
-    '''
 
   return stuff
+
 

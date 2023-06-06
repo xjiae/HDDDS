@@ -221,7 +221,7 @@ class MySquadModel(XwModel):
     self.embeds_dim = embeds_dim
     self.embed_fn = self.model.get_input_embeddings() if embed_fn is None else embed_fn
     self.mask_token_id = tokenizer.mask_token_id
-    self.mask_token_pt = self.embed_fn(torch.tensor(self.mask_token_id))
+    self.mask_token_pt = self.embed_fn(torch.tensor(self.mask_token_id)).detach()
 
   def forward(self, x=None, w=None, **kwargs):
     # Logical implies
@@ -238,12 +238,14 @@ class MySquadModel(XwModel):
         x = kwargs["inputs_embeds"]
     else:
       assert self.input_mode == "inputs_embeds"
+      x = x.view(x.size(0),-1,self.embeds_dim)
 
     N, L, _ = x.shape # (batch_size, seq_len, embed_dim)
     w = torch.ones(N,L).to(x.device) if w is None else w
     w = w.view(N,L,1)
 
     # Now combine x and w
+    # mask_token_pt = self.embed_fn(torch.tensor(self.mask_token_id))
     mask_token_pt = self.mask_token_pt.to(x.device)
     x_noised = w * x + (1 - w) * mask_token_pt
     outputs = self.model(inputs_embeds=x_noised, **kwargs)

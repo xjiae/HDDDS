@@ -9,14 +9,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as tudata
-# from tqdm import tqdm
-
-# Our stuff
-
-from dataset.mvtec import MVTecDataset
-from dataset.swat import SWaTDataset, SWaTSlidingDataset
-from dataset.wadi import WADIDataset, WADISlidingDataset
-from dataset.hai import HAIDataset, HAISlidingDataset
+from tqdm import tqdm
+from dataset import *
 
 torch.manual_seed(1234)
 #####
@@ -113,9 +107,10 @@ def get_window(ds_name):
     digit = int(digit_str[0]) if digit_str else None
     return digit
 
-def load_cuad_data():
-    cuad = None
-    return cuad
+def load_squad_data(ds_name):
+    train = "train" in ds_name
+    squad = SquadDataset("roberta-base", is_train=train)
+    return squad
 
 def get_dataset(ds_name):
     if 'mvtec' in ds_name:
@@ -126,8 +121,8 @@ def get_dataset(ds_name):
         return load_wadi_data(ds_name)
     elif 'hai' in ds_name:
         return load_hai_data(ds_name)
-    elif 'cuad' in ds_name:
-        return load_cuad_data()
+    elif 'squad' in ds_name:
+        return load_squad_data(ds_name)
 
 if __name__ == "__main__":
     # # example
@@ -136,7 +131,7 @@ if __name__ == "__main__":
     # dataset = get_dataset('swat')
     # example
     # dataset = get_dataset('wadi')
-    dataset = get_dataset('hai')
+    dataset = get_dataset('squad_train')
     breakpoint()
     
 

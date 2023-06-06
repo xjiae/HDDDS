@@ -5,7 +5,7 @@ import torch.utils.data as tud
 import os
 
 class SWaTDataset(torch.utils.data.Dataset):
-    def __init__(self, root=None, contents=None, raw = False):
+    def __init__(self, root="data", contents=None, raw = False):
         assert contents in ["all", "train", "valid"]
         train_fn, test_fn = "swat/train_processed.csv", "swat/test_processed.csv"
         test_gt = 'swat/test_gt_exp.csv'

@@ -163,11 +163,18 @@ def get_dataset_pos_mask(dataset):
 def get_squad_dataloaders(tokenizer_or_name = "roberta-base",
                           train_batch_size = 8,
                           valid_batch_size = 8,
+                          shuffle = True,
                           **kwargs):
   trains = SquadDataset(tokenizer_or_name, is_train=True, **kwargs)
   valids = SquadDataset(tokenizer_or_name, is_train=False, **kwargs)
-  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=True)
-  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=True)
+
+  trains_perm = torch.randperm(len(trains)) if shuffle else torch.tensor(range(len(trains)))
+  valids_perm = torch.randperm(len(valids)) if shuffle else torch.tensor(range(len(valids)))
+  trains = tud.Subset(trains, indices=trains_perm)
+  valids = tud.Subset(valids, indices=valids_perm)
+
+  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=shuffle)
+  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=shuffle)
   return { "train_dataset" : trains,
            "valid_dataset" : valids,
            "train_dataloader" : train_loader,

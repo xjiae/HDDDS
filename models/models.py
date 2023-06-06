@@ -87,10 +87,10 @@ class LogisticRegression(XwModel):
      def forward(self, x, w=None):
          x = x.float()
          outputs = torch.sigmoid(self.linear(x))
-         if self.return_mode == "last":
+         if self.return_mode == "scalar_score":
           return outputs
          elif self.return_mode == "two_class":
-          return torch.cat([outputs, 1-outputs], dim=1)
+          return torch.cat([1-outputs, outputs], dim=1)
          else:
           raise NotImplementedError()
        

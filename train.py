@@ -33,17 +33,17 @@ DEFAULT_SQUAD_LOADER_KWARGS = {}
 
 
 # Run a single epoch for mvtec
-def run_once_mvtec(model, dataloader, optimizer, phase, configs):
+def run_once_mvtec(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
   loss_fn = nn.BCELoss(reduction="sum")
   num_processed, num_corrects = 0, 0
   running_loss, avg_acc = 0.0, 0.0
   pbar = tqdm(dataloader)
   for it, (x, y, w) in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
-    x, y, w = x.cuda(), y.cuda(), w.cuda()
+    x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(-1)
       loss = loss_fn(y_pred.double(), y.double())
@@ -63,10 +63,10 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs):
 
 
 # Sliding tbular stuff
-def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
+def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
 
   loss_fn = nn.BCELoss(reduction="sum")
   num_processed, num_corrects = 0, 0
@@ -74,7 +74,7 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
   pbar = tqdm(dataloader)
   for it, (x, y, w, l) in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
-    x, y, w, l = x.cuda(), y.cuda(), w.cuda(), l.cuda()
+    x, y, w, l = x.to(device), y.to(device), w.to(device), l.to(device)
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
       loss = loss_fn(y_pred.double(), y.double())
@@ -94,20 +94,21 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
 
 
 # squad training
-def run_once_squad(model, dataloader, optimizer, phase, configs):
+def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
-  model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+  # model = nn.DataParallel(model, device_ids=configs.device_ids)
+  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
 
   num_processed, running_loss = 0, 0.0
   pbar = tqdm(dataloader)
   for it, batch in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
+    batch = tuple(b.to(device) for b in batch)
     inputs = {
       "input_ids": batch[0],
       "attention_mask": batch[1],
       "token_type_ids": batch[2],
-      "start_positions": batch[3],
+      "start_positions": batch[3],  # Giving start and end position should have model yield loss
       "end_positions": batch[4],
     }
 
@@ -129,8 +130,14 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs):
       y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
       loss = loss_fn(y_pred.double(), y.double())
       # breakpoint()
+      # outputs = model(**inputs)
+      # loss = outputs["loss"]  # This should be supplied by the model
+      # If multiple GPUs are used, collect them
+      if loss.numel() > 1:
+        loss = loss.sum()
+
       if phase == "train":
-        loss.backward()
+        loss.backward(retain_graph=True)
         optimizer.step()
     num_processed += x.size(0)
     num_corrects += torch.sum(y == (y_pred > 0.5))
@@ -139,14 +146,19 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs):
     desc_str = f"[train]" if phase == "train" else "[valid]"
     desc_str += f" processed {num_processed}, loss {avg_loss:.5f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
-  return {
-      "model" : model,
-      "avg_loss" : running_loss / num_processed,
-      "avg_acc" : num_corrects / num_processed
-    }
+
+  # There is no meaningful acc to track for this thing, so don't
+  return { "model" : model,
+           "avg_loss" : running_loss / num_processed,
+           "avg_acc" : 0.0 }
+
 
 # Big train function
-def train(model, dataset_name, configs, saveto_filename_prefix=None):
+def train(model, dataset_name, configs,
+          device = "cuda",
+          save_when = "best_acc",
+          saveto_filename_prefix = None):
+  assert save_when in ["best_acc", "best_loss"]
   dataset_name = dataset_name.lower()
 
   if dataset_name == "mvtec":
@@ -189,7 +201,7 @@ def train(model, dataset_name, configs, saveto_filename_prefix=None):
   valid_loader = loaders_dict["valid_dataloader"]
   optimizer = torch.optim.Adam(model.parameters(), lr=configs.lr)
 
-  best_valid_acc = 0.0
+  best_valid_loss, best_valid_acc = 0.0, 0.0
   best_model_weights = copy.deepcopy(model.state_dict())
 
   print(f"Training with {dataset_name}")
@@ -198,8 +210,8 @@ def train(model, dataset_name, configs, saveto_filename_prefix=None):
   
   for epoch in range(1, configs.num_epochs+1):
     print(f"# epoch {epoch}/{configs.num_epochs}")
-    train_stats = run_once_func(model, train_loader, optimizer, "train", configs)
-    valid_stats = run_once_func(model, valid_loader, optimizer, "valid", configs)
+    train_stats = run_once_func(model, train_loader, optimizer, "train", configs, device=device)
+    valid_stats = run_once_func(model, valid_loader, optimizer, "valid", configs, device=device)
     train_loss, train_acc = train_stats["avg_loss"], train_stats["avg_acc"]
     valid_loss, valid_acc = valid_stats["avg_loss"], valid_stats["avg_acc"]
     desc_str = f"train (loss {train_loss:.4f}, acc {train_acc:.4f}), "
@@ -209,7 +221,8 @@ def train(model, dataset_name, configs, saveto_filename_prefix=None):
     saveto = f"{dataset_name}_epoch{epoch}.pt"
     saveto = saveto if saveto_filename_prefix is None else saveto_filename_prefix + "_" + saveto
     saveto = os.path.join(configs.models_saveto_dir, saveto)
-    if valid_acc > best_valid_acc:
+    if ((save_when == "best_acc" and valid_acc >= best_valid_acc)
+        or (save_when == "best_loss" and valid_loss <= best_valid_loss)):
       best_valid_acc = valid_acc
       best_model_weights = copy.deepcopy(model.state_dict())
       torch.save(best_model_weights, saveto)

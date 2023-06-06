@@ -16,8 +16,7 @@ simple_net = SimpleNet(in_shape=(3,256,256), out_shape=(2,))
 ffres = MyFastResA(return_mode="two_class")
 
 tokenizer = AutoTokenizer.from_pretrained("roberta-base", use_fast=False)
-mysquad = MySquadModel("roberta-base", input_mode="inputs_embeds")
-embed_fn = mysquad.model.get_input_embeddings()
+mysquad = MySquadModel("roberta-base", tokenizer, input_mode="input_ids")
 
 
 # model = simple_net
@@ -40,5 +39,13 @@ def run_mvtec(num_todo=250):
   lime_stuff = get_mvtec_explanation(model, mvtec_dataset, lime_configs, saveto=lime_saveto, num_todo=num_todo)
   shap_stuff = get_mvtec_explanation(model, mvtec_dataset, shap_configs, saveto=shap_saveto, num_todo=num_todo)
   return grad_stuff, intg_stuff, lime_stuff, shap_stuff
+
+
+context = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend "Venite Ad Me Omnes". Next to the Main Building is the Basilica of the Sacred Heart. Immediately behind the basilica is the Grotto, a Marian place of prayer and reflection. It is a replica of the grotto at Lourdes, France where the Virgin Mary reputedly appeared to Saint Bernadette Soubirous in 1858. At the end of the main drive (and in a direct line that connects through 3 statues and the Gold Dome), is a simple, modern stone statue of Mary.'
+
+question = "'To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?'"
+
+inputs = tokenizer(question, context)
+input_ids = torch.tensor(inputs["input_ids"]).view(1,-1)
 
 

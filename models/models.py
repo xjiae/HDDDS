@@ -1,3 +1,4 @@
+import copy
 import math
 import torch
 import torch.nn as nn
@@ -201,39 +202,51 @@ class MyFastResA(XwModel):
 class MySquadModel(XwModel):
   def __init__(self,
                name_or_model,
+               tokenizer,
+               embed_fn = None,
                input_mode = "dict",
                return_mode = "all",
                embeds_dim = 768,
-               auto_reshape = True, # Only really applies for embed_pts
                pretrained_kwargs_dict= {}):
-    super(MySquadModel, self).__init__(in_shape=(embeds_dim,), out_shape=(-1,), w_shape=(embeds_dim,))
+    super(MySquadModel, self).__init__(in_shape=(-1,), out_shape=(-1,), w_shape=(-1,))
     if isinstance(name_or_model, str):
       self.model = AutoModelForQuestionAnswering.from_pretrained(name_or_model, **pretrained_kwargs_dict)
     else:
       assert isinstance(name_or_model, nn.Module)
-      self.model = name_or_model
+      self.model = copy.deepcopy(name_or_model)
 
     assert input_mode in ["inputs_embeds", "input_ids", "dict"]
-
     self.input_mode = input_mode
     self.return_mode = return_mode
     self.embeds_dim = embeds_dim
-    self.auto_reshape = auto_reshape
-
+    self.embed_fn = self.model.get_input_embeddings() if embed_fn is None else embed_fn
+    self.mask_token_id = tokenizer.mask_token_id
+    self.mask_token_pt = self.embed_fn(torch.tensor(self.mask_token_id))
 
   def forward(self, x=None, w=None, **kwargs):
     # Logical implies
-    if self.input_mode == "inputs_embeds":
-      if self.auto_reshape:
-        x = x.view(x.size(0),-1,self.embeds_dim)
-      outputs = self.model(inputs_embeds=x, **kwargs)
-    elif self.input_mode == "input_ids":
-      outputs = self.model(input_ids=x, **kwargs)
+    if self.input_mode == "input_ids":
+      x = self.embed_fn(x)
     elif self.input_mode == "dict":
-      outputs = self.model(**kwargs)
+      if "input_ids" in kwargs.keys():
+        x = kwargs["input_ids"]
+        x = self.embed_fn(x)
+        # Delete since we've extracted embedding; otherwise model complains
+        del kwargs["input_ids"]
+      else:
+        assert "inputs_embeds" in kwargs.keys()
+        x = kwargs["inputs_embeds"]
     else:
-      raise NotImplementedError
+      assert self.input_mode == "inputs_embeds"
 
+    N, L, _ = x.shape # (batch_size, seq_len, embed_dim)
+    w = torch.ones(N,L).to(x.device) if w is None else w
+    w = w.view(N,L,1)
+
+    # Now combine x and w
+    mask_token_pt = self.mask_token_pt.to(x.device)
+    x_noised = w * x + (1 - w) * mask_token_pt
+    outputs = self.model(inputs_embeds=x_noised, **kwargs)
     assert isinstance(outputs, QuestionAnsweringModelOutput)
 
     if self.return_mode == "all":
@@ -244,6 +257,5 @@ class MySquadModel(XwModel):
       return outputs.end_logits
     else:
       raise NotImplementedError()
-
 
 

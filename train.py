@@ -33,17 +33,17 @@ DEFAULT_SQUAD_LOADER_KWARGS = {}
 
 
 # Run a single epoch for mvtec
-def run_once_mvtec(model, dataloader, optimizer, phase, configs):
+def run_once_mvtec(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
   loss_fn = nn.BCELoss(reduction="sum")
   num_processed, num_corrects = 0, 0
   running_loss, avg_acc = 0.0, 0.0
   pbar = tqdm(dataloader)
   for it, (x, y, w) in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
-    x, y, w = x.cuda(), y.cuda(), w.cuda()
+    x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(-1)
       loss = loss_fn(y_pred.double(), y.double())
@@ -63,10 +63,10 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs):
 
 
 # Sliding tbular stuff
-def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
+def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
 
   loss_fn = nn.BCELoss(reduction="sum")
   num_processed, num_corrects = 0, 0
@@ -74,7 +74,7 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
   pbar = tqdm(dataloader)
   for it, (x, y, w, l) in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
-    x, y, w, l = x.cuda(), y.cuda(), w.cuda(), l.cuda()
+    x, y, w, l = x.to(device), y.to(device), w.to(device), l.to(device)
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
       loss = loss_fn(y_pred.double(), y.double())
@@ -94,15 +94,16 @@ def run_once_sliding_tabular(model, dataloader, optimizer, phase, configs):
 
 
 # squad training
-def run_once_squad(model, dataloader, optimizer, phase, configs):
+def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
-  model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+  # model = nn.DataParallel(model, device_ids=configs.device_ids)
+  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
 
   num_processed, running_loss = 0, 0.0
   pbar = tqdm(dataloader)
   for it, batch in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
+    batch = tuple(b.to(device) for b in batch)
     inputs = {
       "input_ids": batch[0],
       "attention_mask": batch[1],
@@ -117,8 +118,9 @@ def run_once_squad(model, dataloader, optimizer, phase, configs):
       # If multiple GPUs are used, collect them
       if loss.numel() > 1:
         loss = loss.sum()
+
       if phase == "train":
-        loss.backward()
+        loss.backward(retain_graph=True)
         optimizer.step()
 
     num_processed += batch[0].size(0)
@@ -136,6 +138,7 @@ def run_once_squad(model, dataloader, optimizer, phase, configs):
 
 # Big train function
 def train(model, dataset_name, configs,
+          device = "cuda",
           save_when = "best_acc",
           saveto_filename_prefix = None):
   assert save_when in ["best_acc", "best_loss"]
@@ -190,8 +193,8 @@ def train(model, dataset_name, configs,
   
   for epoch in range(1, configs.num_epochs+1):
     print(f"# epoch {epoch}/{configs.num_epochs}")
-    train_stats = run_once_func(model, train_loader, optimizer, "train", configs)
-    valid_stats = run_once_func(model, valid_loader, optimizer, "valid", configs)
+    train_stats = run_once_func(model, train_loader, optimizer, "train", configs, device=device)
+    valid_stats = run_once_func(model, valid_loader, optimizer, "valid", configs, device=device)
     train_loss, train_acc = train_stats["avg_loss"], train_stats["avg_acc"]
     valid_loss, valid_acc = valid_stats["avg_loss"], valid_stats["avg_acc"]
     desc_str = f"train (loss {train_loss:.4f}, acc {train_acc:.4f}), "

@@ -69,22 +69,21 @@ class ShapConfigs(ExplainerConfigs):
 
 
 # The stuff for MVTec
-def get_mvtec_explanation(model, dataset, configs,
-                          custom_desc = None,
-                          misc_data = None,
-                          num_todo = None,
-                          post_process_fun = None,
-                          save_every_k = 20,
-                          device = "cuda",
-                          do_save = True,
-                          saveto = None,
-                          seed = 1234):
+def get_mvtec_explanations(model, dataset, configs,
+                           custom_desc = None,
+                           misc_data = None,
+                           num_todo = None,
+                           post_process_fun = None,
+                           save_every_k = 20,
+                           device = "cuda",
+                           do_save = True,
+                           saveto = None,
+                           save_small = False,
+                           seed = 1234):
   assert isinstance(model, XwModel)
+  model.eval().to(device)
+
   if do_save: assert saveto is not None
-  num_todo = len(dataset) if num_todo is None else num_todo
-  torch.manual_seed(1234)
-  perm = torch.randperm(len(dataset))
-  dataset = tud.Subset(dataset, indices=perm)
 
   if isinstance(configs, GradConfigs):
     explainer = my_openxai.Explainer(method="grad", model=model)
@@ -97,10 +96,13 @@ def get_mvtec_explanation(model, dataset, configs,
   else:
     raise NotImplementedError()
 
-  model.eval().to(device)
+  torch.manual_seed(seed)
+  num_todo = len(dataset) if num_todo is None else num_todo
+  perm = torch.randperm(len(dataset))
+  todo_indices = perm[:num_todo]
+  pbar = tqdm(todo_indices)
 
   all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
-  pbar = tqdm(range(num_todo))
   for i in pbar:
     x, y, w = dataset[i]
     xx, yy, w = x.unsqueeze(0).to(device), torch.tensor([y]).to(device), w.to(device)
@@ -124,11 +126,12 @@ def get_mvtec_explanation(model, dataset, configs,
       stuff = {
           "dataset" : dataset,
           "model_class" : model_class,
-          "model_state_dict" : state_dict,
+          "model_state_dict" : None if save_small else state_dict,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),
           "w_exps" : all_w_exps,
           "ws" : all_ws,
+          "todo_indices" : todo_indices,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }
@@ -137,7 +140,7 @@ def get_mvtec_explanation(model, dataset, configs,
   return stuff
 
 # The stuff for tabular
-def get_tabular_explanation(model, dataset, configs,
+def get_tabular_sliding_explanation(model, dataset, configs,
                           custom_desc = None,
                           misc_data = None,
                           num_todo = None,
@@ -146,13 +149,11 @@ def get_tabular_explanation(model, dataset, configs,
                           device = "cuda",
                           do_save = True,
                           saveto = None,
+                          save_small = False,
                           seed = 1234):
   assert isinstance(model, XwModel)
+  model.eval().to(device)
   if do_save: assert saveto is not None
-  num_todo = len(dataset) if num_todo is None else num_todo
-  _, indices = train_test_split(range(len(dataset)), test_size=num_todo, stratify=dataset.y, random_state=seed)
-  dataset = torch.utils.data.Subset(dataset, indices)
-
 
   if isinstance(configs, GradConfigs):
     explainer = my_openxai.Explainer(method="grad", model=model)
@@ -165,9 +166,13 @@ def get_tabular_explanation(model, dataset, configs,
   else:
     raise NotImplementedError()
 
-  all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
-  pbar = tqdm(range(num_todo))
+  torch.manual_seed(seed)
+  num_todo = len(dataset) if num_todo is None else num_todo
+  perm = torch.randperm(len(dataset))
+  todo_indices = perm[:num_todo]
+  pbar = tqdm(todo_indices)
 
+  all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
   for i in pbar:
     x, y, w, l = dataset[i]
     xx, yy, w = x.unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), w.to(device)
@@ -197,11 +202,88 @@ def get_tabular_explanation(model, dataset, configs,
       stuff = {
           "dataset" : dataset,
           "model_class" : model_class,
-          "model_state_dict" : state_dict,
+          "model_state_dict" : None if save_small else state_dict,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),
           "w_exps" : all_w_exps,
           "ws" : all_ws,
+          "todo_indices" : todo_indices,
+          "custom_desc" : custom_desc,
+          "misc_data" : misc_data,
+      }
+      torch.save(stuff, saveto)
+
+  return stuff
+
+# The stuff for tabular
+def get_tabular_explanations(model, dataset, configs,
+                             custom_desc = None,
+                             misc_data = None,
+                             num_todo = None,
+                             post_process_fun = None,
+                             save_every_k = 20,
+                             device = "cuda",
+                             do_save = True,
+                             saveto = None,
+                             save_small = False,
+                             seed = 1234):
+  assert isinstance(model, XwModel)
+  if do_save: assert saveto is not None
+
+  if isinstance(configs, GradConfigs):
+    explainer = my_openxai.Explainer(method="grad", model=model)
+  elif isinstance(configs, IntGradConfigs):
+    explainer = my_openxai.Explainer(method="ig", model=model, dataset_tensor=configs.baseline)
+  elif isinstance(configs, LimeConfigs):
+    explainer = my_openxai.Explainer(method="lime", model=model, param_dict_lime=configs.param_dict_lime)
+  elif isinstance(configs, ShapConfigs):
+    explainer = my_openxai.Explainer(method="shap", model=model, param_dict_shap=configs.param_dict_shap)
+  else:
+    raise NotImplementedError()
+ 
+  torch.manual_seed(seed)
+  num_todo = len(dataset) if num_todo is None else num_todo
+  perm = torch.randperm(len(dataset))
+  todo_indices = perm[:num_todo]
+  pbar = tqdm(todo_indices)
+
+  all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
+
+  for i in pbar:
+    x, y, w = dataset[i]
+    xx, yy, w = torch.from_numpy(x).unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), torch.from_numpy(w).to(device)
+
+
+    if configs.train_mode:
+      model.train().to(device)
+      ww_exp = explainer.get_explanation(xx, yy, configs.train_mode).view(x.shape)
+      model.eval().to(device)
+    else:
+      ww_exp = explainer.get_explanation(xx, yy).view(x.shape)
+    
+    if callable(post_process_fun):
+      w_exp = post_process_fun(ww_exp)
+    else:
+      w_exp = ww_exp.clamp(0,1).view(w.shape).float()
+
+    # all_xs.append(x.cpu())
+    # all_ys.append(y)
+    all_ws.append(w.cpu())
+    all_w_exps.append(w_exp.cpu())
+
+    # Speedhack: save once every few iters, or if we're near the end
+    if do_save and (i % save_every_k == 0 or len(pbar) - i < 2):
+      model_class = model.__class__
+      state_dict = model.state_dict()
+      stuff = {
+          "dataset" : dataset,
+          "model_class" : model_class,
+          "model_state_dict" : None if save_small else state_dict,
+          "method" : configs.desc_str(),
+          "num_total" : len(all_xs),
+          "w_exps" : all_w_exps,
+          "ws" : all_ws,
+          "todo_indices" : todo_indices,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }
@@ -211,22 +293,19 @@ def get_tabular_explanation(model, dataset, configs,
 
 
 # The stuff for squad
-def get_squad_explanation(model, dataset, configs,
-                          custom_desc = None,
-                          misc_data = None,
-                          num_todo = None,
-                          post_process_fun = None,
-                          save_every_k = 20,
-                          device = "cuda",
-                          do_save = True,
-                          saveto = None,
-                          seed = 1234):
+def get_squad_explanations(model, dataset, configs,
+                           custom_desc = None,
+                           misc_data = None,
+                           num_todo = None,
+                           post_process_fun = None,
+                           save_every_k = 20,
+                           device = "cuda",
+                           do_save = True,
+                           saveto = None,
+                           save_small = False,
+                           seed = 1234):
   assert isinstance(model, MySquadModel)
   if do_save: assert saveto is not None
-  num_todo = len(dataset) if num_todo is None else num_todo
-  torch.manual_seed(1234)
-  perm = torch.randperm(len(dataset))
-  dataset = tud.Subset(dataset, indices=perm)
 
   # Wrap so that it now directly takes inputs_embeds
   amodel = copy.deepcopy(model).eval().to(device)
@@ -250,6 +329,12 @@ def get_squad_explanation(model, dataset, configs,
     bexplainer = my_openxai.Explainer(method="shap", model=bmodel, param_dict_shap=configs.param_dict_shap)
   else:
     raise NotImplementedError()
+
+  torch.manual_seed(seed)
+  num_todo = len(dataset) if num_todo is None else num_todo
+  perm = torch.randperm(len(dataset))
+  todo_indices = perm[:num_todo]
+  pbar = tqdm(todo_indices)
 
   all_ws, all_w_exps = [], []
   pbar = tqdm(range(num_todo))
@@ -288,11 +373,12 @@ def get_squad_explanation(model, dataset, configs,
       stuff = {
           "dataset" : dataset,
           "model_class" : model_class,
-          "model_state_dict" : state_dict,
+          "model_state_dict" : None if save_small else state_dict,
           "method" : configs.desc_str(),
           "num_total" : len(all_ws),
           "w_exps" : all_w_exps,
           "ws" : all_ws,
+          "todo_indices" : todo_indices,
           "custom_desc" : custom_desc,
           "misc_data" : misc_data,
       }

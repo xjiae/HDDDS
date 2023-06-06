@@ -2,8 +2,9 @@ from sklearn.metrics import f1_score, confusion_matrix
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_recall_curve
-def threshold_binary(row, threshold):
-    return np.where(row >= threshold, 1, 0)
+
+
+
 def threshold_array(arr, threshold):
     # Create a copy of the input array
     transformed_arr = np.copy(arr)
@@ -14,9 +15,11 @@ def threshold_array(arr, threshold):
     
     return transformed_arr
 def summary(y_true, y_pred, score = True):
-  
+    y_true = y_true.astype(int)
     if score:
+
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        recall = recall + 1e-10
         f1_scores = 2*recall*precision/(recall+precision)
         threshold = thresholds[np.argmax(f1_scores)]
         

@@ -112,9 +112,27 @@ def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
       "end_positions": batch[4],
     }
 
+
+# tbular stuff
+def run_once_tabular(model, dataloader, optimizer, phase, configs, device="cuda"):
+  assert isinstance(configs, TrainConfigs) and phase in ["train", "val", "valid"]
+  model = nn.DataParallel(model, device_ids=configs.device_ids)
+  _ = model.train().cuda() if phase == "train" else model.eval().cuda()
+
+  loss_fn = nn.BCELoss(reduction="sum")
+  num_processed, num_corrects = 0, 0
+  running_loss, avg_acc = 0.0, 0.0
+  pbar = tqdm(dataloader)
+  for it, (x, y, w) in enumerate(pbar):
+    _ = optimizer.zero_grad() if phase == "train" else None
+    x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
-      outputs = model(**inputs)
-      loss = outputs["loss"]  # This should be supplied by the model
+      y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
+      # y_pred = model.fit(x, y)
+      loss = loss_fn(y_pred.double(), y.double())
+      # breakpoint()
+      # outputs = model(**inputs)
+      # loss = outputs["loss"]  # This should be supplied by the model
       # If multiple GPUs are used, collect them
       if loss.numel() > 1:
         loss = loss.sum()
@@ -122,12 +140,12 @@ def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
       if phase == "train":
         loss.backward(retain_graph=True)
         optimizer.step()
-
-    num_processed += batch[0].size(0)
+    num_processed += x.size(0)
+    num_corrects += torch.sum(y == (y_pred > 0.5))
     running_loss += loss.item()
-    avg_loss = running_loss / num_processed
+    avg_loss, avg_acc = (running_loss / num_processed), (num_corrects / num_processed)
     desc_str = f"[train]" if phase == "train" else "[valid]"
-    desc_str += f" processed {num_processed}, loss {avg_loss:.4f}"
+    desc_str += f" processed {num_processed}, loss {avg_loss:.5f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
 
   # There is no meaningful acc to track for this thing, so don't
@@ -150,7 +168,7 @@ def train(model, dataset_name, configs,
 
   elif dataset_name == "hai":
     get_loaders_func = get_hai_dataloaders
-    run_once_func = run_once_sliding_tabular
+    run_once_func = run_once_tabular
 
   elif dataset_name == "hai-sliding":
     get_loaders_func = get_hai_sliding_dataloaders
@@ -158,7 +176,7 @@ def train(model, dataset_name, configs,
 
   elif dataset_name == "swat":
     get_loaders_func = get_swat_dataloaders
-    run_once_func = run_once_sliding_tabular
+    run_once_func = run_once_tabular
 
   elif dataset_name == "swat-sliding":
     get_loaders_func = get_swat_sliding_dataloaders
@@ -166,7 +184,7 @@ def train(model, dataset_name, configs,
 
   elif dataset_name == "wadi":
     get_loaders_func = get_wadi_dataloaders
-    run_once_func = run_once_sliding_tabular
+    run_once_func = run_once_tabular
 
   elif dataset_name == "wadi-sliding":
     get_loaders_func = get_wadi_sliding_dataloaders

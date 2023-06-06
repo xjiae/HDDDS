@@ -36,6 +36,9 @@ class MVTecDataset(Dataset):
                  is_train = True,
                  good_value = 0,
                  anom_value = 1):
+
+        if "metal" in category:
+            category = "metal_nut"
         assert category in MVTEC_CATEGORIES
         self.image_transform = transforms.Compose(
             [

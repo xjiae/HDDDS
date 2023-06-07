@@ -78,7 +78,7 @@ def get_mvtec_explanations(model, dataset, configs,
                            device = "cuda",
                            do_save = True,
                            saveto = None,
-                           save_small = False,
+                           save_small = True,
                            seed = 1234):
   assert isinstance(model, XwModel)
   model.eval().to(device)
@@ -149,7 +149,7 @@ def get_tabular_sliding_explanations(model, dataset, configs,
                                      device = "cuda",
                                      do_save = True,
                                      saveto = None,
-                                     save_small = False,
+                                     save_small = True,
                                      seed = 1234):
   assert isinstance(model, XwModel)
   model.eval().to(device)
@@ -225,10 +225,11 @@ def get_tabular_explanations(model, dataset, configs,
                              device = "cuda",
                              do_save = True,
                              saveto = None,
-                             save_small = False,
+                             save_small = True,
                              seed = 1234):
   assert isinstance(model, XwModel)
   if do_save: assert saveto is not None
+  model.eval().to(device)
 
   if isinstance(configs, GradConfigs):
     explainer = my_openxai.Explainer(method="grad", model=model)
@@ -251,7 +252,9 @@ def get_tabular_explanations(model, dataset, configs,
 
   for i in pbar:
     x, y, w = dataset[i]
-    xx, yy, w = torch.from_numpy(x).unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), torch.from_numpy(w).to(device)
+    xx = x.unsqueeze(0).to(device).contiguous()
+    yy = torch.tensor([y]).to(device)
+    w = w.to(device)
 
 
     if configs.train_mode:
@@ -302,7 +305,7 @@ def get_squad_explanations(model, dataset, configs,
                            device = "cuda",
                            do_save = True,
                            saveto = None,
-                           save_small = False,
+                           save_small = True,
                            seed = 1234):
   assert isinstance(model, MySquadModel)
   if do_save: assert saveto is not None

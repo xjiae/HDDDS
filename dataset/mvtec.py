@@ -60,8 +60,9 @@ class MVTecDataset(Dataset):
                 ]
             )
         self.is_train = is_train
-        self.good_value = 0
-        self.anom_value = 1
+        self.good_value = good_value
+        self.anom_value = anom_value
+
 
     def __getitem__(self, index):
         image_file = self.image_files[index]

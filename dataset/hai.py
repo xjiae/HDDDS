@@ -35,7 +35,7 @@ class HAIDataset(torch.utils.data.Dataset):
             train_explanation = pd.DataFrame(np.zeros((self.data.shape[0]-len(test_explanation), test_explanation.shape[1])))
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
         self.timestamp = self.data['epoch']
-        self.y = torch.tensor(self.data['label'].values)
+        self.y = torch.tensor(self.data['label'].values).long()
      
         
 
@@ -90,7 +90,7 @@ class HAISlidingDataset(torch.utils.data.Dataset):
             if (self.ts[R]-self.ts[L]) == self.window_size - 1:
                 self.valid_idxs.append(L)
                 self.y.append(self.labels.values[R])
-        self.y = torch.tensor(self.y)
+        self.y = torch.tensor(self.y).long()
                 
         self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
         self.n_idxs = len(self.valid_idxs)

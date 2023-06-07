@@ -21,6 +21,7 @@ def summary(y_true, y_pred, score = True):
         precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
         recall = recall + 1e-10
         f1_scores = 2*recall*precision/(recall+precision)
+        # breakpoint()
         threshold = thresholds[np.argmax(f1_scores)]
         
         
@@ -31,5 +32,5 @@ def summary(y_true, y_pred, score = True):
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     fpr = fp / (fp + tn)
     fnr = fn / (fn + tp)
-    print(f"& {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\")
+    # print(f"& {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\")
     return acc, f1, fpr, fnr

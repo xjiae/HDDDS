@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 from models import *
 from train import *
 from get_explanations import *
-from utils import *
+
 
 MODELS_DIR = "saved_models"
 SAVETO_DIR = "saved_explanations"
@@ -17,14 +17,6 @@ grad_configs = GradConfigs()
 intg_configs = IntGradConfigs()
 
 
-def evaluate(ret, ds_name, model_name, attr_name):
-  w_true = torch.cat(ret['ws']).numpy().flatten()
-  w_pred = torch.cat(ret['w_exps']).numpy().flatten()
-  acc, f1, fpr, fnr = summary(w_true, w_pred, score=True)
-  saveto = open(f"results/results_{attr_name}.txt", "a")
-  saveto.write(f"{ds_name},{model_name},{fpr:.4f},{fnr:.4f},{acc:.4f},{f1:.4f}\n")
-  saveto.close()
-  return acc, f1, fpr, fnr 
 
 
 def run_mvtec(seeds=[0,1], num_todo=250, model_file="mvtec_epoch2.pt"):

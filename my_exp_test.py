@@ -101,7 +101,7 @@ def run_hai_sliding(seeds=[0,1], num_todo=100, model_file="hai-sliding_epoch2.pt
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(86,), out_shape=(1,), return_mode="two_class")
   model.load_state_dict(state_dict)
-  dataset = HAISlidingDataset(window_size=100, contents="valid")
+  dataset = HAISlidingDataset(window_size=100, contents="all")
   grad_configs.train_mode = True
   intg_configs.train_mode = True
   for i, seed in enumerate(seeds):
@@ -117,7 +117,7 @@ def run_wadi_sliding(seeds=[0,1], num_todo=100, model_file="wadi-sliding_epoch2.
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(127,), out_shape=(1,), return_mode="two_class")
   model.load_state_dict(state_dict)
-  dataset = WADISlidingDataset(window_size=100, contents="valid")
+  dataset = WADISlidingDataset(window_size=100, contents="all")
   grad_configs.train_mode = True
   intg_configs.train_mode = True
   for i, seed in enumerate(seeds):
@@ -133,7 +133,7 @@ def run_swat_sliding(seeds=[0,1], num_todo=100, model_file="swat-sliding_epoch2.
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(51,), out_shape=(1,), return_mode="two_class")
   model.load_state_dict(state_dict)
-  dataset = SWaTSlidingDataset(window_size=100, contents="valid")
+  dataset = SWaTSlidingDataset(window_size=100, contents="all")
   grad_configs.train_mode = True
   intg_configs.train_mode = True
   for i, seed in enumerate(seeds):

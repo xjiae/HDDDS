@@ -41,8 +41,10 @@ class HAIDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         index = index.item() if isinstance(index, torch.Tensor) else index
-        return torch.tensor(self.data.iloc[index, 1:-2].values), torch.tensor(self.data.iloc[index, -2]), torch.tensor(self.explanation.iloc[index, :].values)
-            
+        x = torch.tensor(self.data.iloc[index, 1:-2].values)
+        y = torch.tensor(self.data.iloc[index, -2])
+        w = torch.tensor(self.explanation.iloc[index, :].values)
+        return x, y.long(), w
        
 
     def __len__(self):

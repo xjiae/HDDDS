@@ -36,22 +36,6 @@ wadi_sliding_configs = TrainConfigs(num_epochs=5, loaders_kwargs=DEFAULT_WADI_SL
 swat_sliding_configs = TrainConfigs(num_epochs=5, loaders_kwargs=DEFAULT_SWAT_SLIDING_LOADER_KWARGS)
 squad_configs = TrainConfigs(num_epochs=2, loaders_kwargs=DEFAULT_SQUAD_LOADER_KWARGS)
 
-###
-
-# squad_stuff = get_squad_dataloaders()
-# squad_trains = squad_stuff["train_dataset"]
-# squad_valids = squad_stuff["valid_dataset"]
-
-# roberta = AutoModelForQuestionAnswering.from_pretrained("roberta-base")
-
-# context = 'Architecturally, the school has a Catholic character. Atop the Main Building\'s gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend "Venite Ad Me Omnes". Next to the Main Building is the Basilica of the Sacred Heart. Immediately behind the basilica is the Grotto, a Marian place of prayer and reflection. It is a replica of the grotto at Lourdes, France where the Virgin Mary reputedly appeared to Saint Bernadette Soubirous in 1858. At the end of the main drive (and in a direct line that connects through 3 statues and the Gold Dome), is a simple, modern stone statue of Mary.'
-
-# question = "'To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?'"
-
-# train(swat_lr, 'swat', swat_configs, saveto_filename_prefix="lr")
-# train(wadi_lr, 'wadi', wadi_configs, saveto_filename_prefix="lr")
-# train(hai_lr, 'hai', hai_configs, saveto_filename_prefix="lr")
-
 train(swat_lstm, 'swat-sliding', swat_sliding_configs, saveto_filename_prefix="lstm")
 train(wadi_lstm, 'wadi-sliding', wadi_sliding_configs, saveto_filename_prefix="lstm")
 train(hai_lstm, 'hai-sliding', hai_sliding_configs, saveto_filename_prefix="lstm")

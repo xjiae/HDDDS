@@ -140,17 +140,17 @@ def get_mvtec_explanations(model, dataset, configs,
   return stuff
 
 # The stuff for tabular
-def get_tabular_sliding_explanation(model, dataset, configs,
-                          custom_desc = None,
-                          misc_data = None,
-                          num_todo = None,
-                          post_process_fun = None,
-                          save_every_k = 20,
-                          device = "cuda",
-                          do_save = True,
-                          saveto = None,
-                          save_small = False,
-                          seed = 1234):
+def get_tabular_sliding_explanations(model, dataset, configs,
+                                     custom_desc = None,
+                                     misc_data = None,
+                                     num_todo = None,
+                                     post_process_fun = None,
+                                     save_every_k = 20,
+                                     device = "cuda",
+                                     do_save = True,
+                                     saveto = None,
+                                     save_small = False,
+                                     seed = 1234):
   assert isinstance(model, XwModel)
   model.eval().to(device)
   if do_save: assert saveto is not None

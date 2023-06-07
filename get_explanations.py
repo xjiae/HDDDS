@@ -229,6 +229,7 @@ def get_tabular_explanations(model, dataset, configs,
                              seed = 1234):
   assert isinstance(model, XwModel)
   if do_save: assert saveto is not None
+  model.eval().to(device)
 
   if isinstance(configs, GradConfigs):
     explainer = my_openxai.Explainer(method="grad", model=model)
@@ -251,7 +252,9 @@ def get_tabular_explanations(model, dataset, configs,
 
   for i in pbar:
     x, y, w = dataset[i]
-    xx, yy, w = torch.from_numpy(x).unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), torch.from_numpy(w).to(device)
+    xx = x.unsqueeze(0).to(device).contiguous()
+    yy = torch.tensor([y]).to(device)
+    w = w.to(device)
 
 
     if configs.train_mode:

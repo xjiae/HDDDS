@@ -68,6 +68,32 @@ def run_hai(seeds=[0,1], num_todo=250, model_file="lr_hai_epoch5.pt"):
     get_tabular_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
 
 
+def run_wadi(seeds=[0,1], num_todo=250, model_file="lr_wadi_epoch5.pt"):
+  state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
+  model = LogisticRegression(in_shape=(127,), return_mode="two_class")
+  model.load_state_dict(state_dict)
+  dataset = WADIDataset(contents="valid")
+  for i, seed in enumerate(seeds):
+    print(f"wadi lr: using seed number {i+1}/{len(seeds)}")
+    grad_saveto = os.path.join(SAVETO_DIR, f"wadi_lr_grad_seed{seed}.pt")
+    intg_saveto = os.path.join(SAVETO_DIR, f"wadi_lr_intg_seed{seed}.pt")
+    get_tabular_explanations(model, dataset, grad_configs, saveto=grad_saveto, num_todo=num_todo, seed=seed, save_small=True)
+    get_tabular_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
+
+
+def run_swat(seeds=[0,1], num_todo=250, model_file="lr_swat_epoch5.pt"):
+  state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
+  model = LogisticRegression(in_shape=(51,), return_mode="two_class")
+  model.load_state_dict(state_dict)
+  dataset = SWaTDataset(contents="valid")
+  for i, seed in enumerate(seeds):
+    print(f"swat lr: using seed number {i+1}/{len(seeds)}")
+    grad_saveto = os.path.join(SAVETO_DIR, f"swat_lr_grad_seed{seed}.pt")
+    intg_saveto = os.path.join(SAVETO_DIR, f"swat_lr_intg_seed{seed}.pt")
+    get_tabular_explanations(model, dataset, grad_configs, saveto=grad_saveto, num_todo=num_todo, seed=seed, save_small=True)
+    get_tabular_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
+
+
 def run_hai_sliding(seeds=[0,1], num_todo=250, model_file="hai-sliding_epoch2.pt"):
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(86,), out_shape=(1,), return_mode="two_class")

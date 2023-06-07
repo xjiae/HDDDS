@@ -128,11 +128,7 @@ def run_once_tabular(model, dataloader, optimizer, phase, configs, device="cuda"
     x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
       y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
-      # y_pred = model.fit(x, y)
       loss = loss_fn(y_pred.double(), y.double())
-      # breakpoint()
-      # outputs = model(**inputs)
-      # loss = outputs["loss"]  # This should be supplied by the model
       # If multiple GPUs are used, collect them
       if loss.numel() > 1:
         loss = loss.sum()

@@ -39,6 +39,7 @@ class SWaTDataset(torch.utils.data.Dataset):
         self.y = self.data['label']
         
     def __getitem__(self, index):
+        index = index.item() if isinstance(index, torch.Tensor) else index
         return torch.tensor(self.data.iloc[index, :-2].values), torch.tensor(self.data.iloc[index, -2]), torch.tensor(self.explanation.iloc[index, :].values)
             
        

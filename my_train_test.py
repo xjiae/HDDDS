@@ -19,9 +19,9 @@ ffres = MyFastResA(return_mode="scalar_score")
 hai_lstm = SimpleLSTM(in_shape=(86,), out_shape=(1,), return_mode="last", softmax_output=True)
 swat_lstm = SimpleLSTM(in_shape=(51,), out_shape=(1,), return_mode="last", softmax_output=True)
 wadi_lstm = SimpleLSTM(in_shape=(127,), out_shape=(1,), return_mode="last", softmax_output=True)
-hai_lr = LogisticRegression(in_shape=(86,), out_shape=(1,))
-swat_lr = LogisticRegression(in_shape=(51,), out_shape=(1,))
-wadi_lr = LogisticRegression(in_shape=(127,), out_shape=(1,))
+hai_lr = LogisticRegression(in_shape=(86,))
+swat_lr = LogisticRegression(in_shape=(51,))
+wadi_lr = LogisticRegression(in_shape=(127,))
 
 tokenizer = AutoTokenizer.from_pretrained("roberta-base", use_fast=False)
 mysquad = MySquadModel("roberta-base", tokenizer, input_mode="dict")
@@ -36,6 +36,10 @@ wadi_sliding_configs = TrainConfigs(num_epochs=5, loaders_kwargs=DEFAULT_WADI_SL
 swat_sliding_configs = TrainConfigs(num_epochs=5, loaders_kwargs=DEFAULT_SWAT_SLIDING_LOADER_KWARGS)
 squad_configs = TrainConfigs(num_epochs=2, loaders_kwargs=DEFAULT_SQUAD_LOADER_KWARGS)
 
-train(swat_lstm, 'swat-sliding', swat_sliding_configs, saveto_filename_prefix="lstm")
-train(wadi_lstm, 'wadi-sliding', wadi_sliding_configs, saveto_filename_prefix="lstm")
-train(hai_lstm, 'hai-sliding', hai_sliding_configs, saveto_filename_prefix="lstm")
+
+def run_to_train():
+  train(swat_lstm, 'swat-sliding', swat_sliding_configs, saveto_filename_prefix="lstm")
+  train(wadi_lstm, 'wadi-sliding', wadi_sliding_configs, saveto_filename_prefix="lstm")
+  train(hai_lstm, 'hai-sliding', hai_sliding_configs, saveto_filename_prefix="lstm")
+
+

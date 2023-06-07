@@ -78,7 +78,7 @@ def get_mvtec_explanations(model, dataset, configs,
                            device = "cuda",
                            do_save = True,
                            saveto = None,
-                           save_small = False,
+                           save_small = True,
                            seed = 1234):
   assert isinstance(model, XwModel)
   model.eval().to(device)
@@ -149,7 +149,7 @@ def get_tabular_sliding_explanations(model, dataset, configs,
                                      device = "cuda",
                                      do_save = True,
                                      saveto = None,
-                                     save_small = False,
+                                     save_small = True,
                                      seed = 1234):
   assert isinstance(model, XwModel)
   model.eval().to(device)
@@ -225,7 +225,7 @@ def get_tabular_explanations(model, dataset, configs,
                              device = "cuda",
                              do_save = True,
                              saveto = None,
-                             save_small = False,
+                             save_small = True,
                              seed = 1234):
   assert isinstance(model, XwModel)
   if do_save: assert saveto is not None
@@ -305,7 +305,7 @@ def get_squad_explanations(model, dataset, configs,
                            device = "cuda",
                            do_save = True,
                            saveto = None,
-                           save_small = False,
+                           save_small = True,
                            seed = 1234):
   assert isinstance(model, MySquadModel)
   if do_save: assert saveto is not None

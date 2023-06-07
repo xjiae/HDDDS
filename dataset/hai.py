@@ -35,7 +35,7 @@ class HAIDataset(torch.utils.data.Dataset):
             train_explanation = pd.DataFrame(np.zeros((self.data.shape[0]-len(test_explanation), test_explanation.shape[1])))
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
         self.timestamp = self.data['epoch']
-        self.y = self.data['label']
+        self.y = torch.tensor(self.data['label'].values)
      
         
 

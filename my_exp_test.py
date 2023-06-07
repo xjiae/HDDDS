@@ -89,7 +89,7 @@ def run_swat(seeds=[0,1], num_todo=100, model_file="lr_swat_epoch5.pt"):
     get_tabular_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
 
 
-def run_hai_sliding(seeds=[0,1], num_todo=100, model_file="hai-sliding_epoch2.pt"):
+def run_hai_sliding(seeds=[0,1], num_todo=100, model_file="lstm_hai-sliding_epoch2.pt"):
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(86,), out_shape=(1,), return_mode="two_class")
   model.load_state_dict(state_dict)
@@ -105,7 +105,7 @@ def run_hai_sliding(seeds=[0,1], num_todo=100, model_file="hai-sliding_epoch2.pt
     get_tabular_sliding_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
 
 
-def run_wadi_sliding(seeds=[0,1], num_todo=100, model_file="wadi-sliding_epoch2.pt"):
+def run_wadi_sliding(seeds=[0,1], num_todo=100, model_file="lstm_wadi-sliding_epoch2.pt"):
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(127,), out_shape=(1,), return_mode="two_class")
   model.load_state_dict(state_dict)
@@ -121,7 +121,7 @@ def run_wadi_sliding(seeds=[0,1], num_todo=100, model_file="wadi-sliding_epoch2.
     get_tabular_sliding_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
 
 
-def run_swat_sliding(seeds=[0,1], num_todo=100, model_file="swat-sliding_epoch2.pt"):
+def run_swat_sliding(seeds=[0,1], num_todo=100, model_file="lstm_swat-sliding_epoch2.pt"):
   state_dict = torch.load(os.path.join(MODELS_DIR, model_file))
   model = SimpleLSTM(in_shape=(51,), out_shape=(1,), return_mode="two_class")
   model.load_state_dict(state_dict)
@@ -139,4 +139,4 @@ def run_swat_sliding(seeds=[0,1], num_todo=100, model_file="swat-sliding_epoch2.
 
 if __name__ == "__main__":
   seeds = range(20)
-
+  # run_wadi_sliding()

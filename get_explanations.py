@@ -180,6 +180,7 @@ def get_tabular_sliding_explanations(model, dataset, configs,
 
     if configs.train_mode:
       model.train().to(device)
+      breakpoint()
       ww_exp = explainer.get_explanation(xx, yy, configs.train_mode).view(x.shape)
       model.eval().to(device)
     else:

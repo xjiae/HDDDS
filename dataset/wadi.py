@@ -66,10 +66,10 @@ class WADISlidingDataset(torch.utils.data.Dataset):
             df = pd.read_csv(test_path, index_col=0)
             self.explanation = pd.read_csv(test_exp_path)
         elif contents == "all":
-            train_data = pd.read_csv(train_path)
-            test_data = pd.read_csv(test_path)
+            train_data = pd.read_csv(train_path, index_col=0)
+            test_data = pd.read_csv(test_path, index_col=0)
             df = pd.concat([train_data, test_data])
-            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-3)))
+            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
             test_explanation = pd.read_csv(test_exp_path)
             self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
         else:

@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as tudata
 from tqdm import tqdm
-from dataset import *
+from datasets import *
 
 torch.manual_seed(1234)
 #####

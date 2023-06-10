@@ -5,7 +5,7 @@ import torch.nn as nn
 import sys
 from tqdm import tqdm
 
-from dataset import *
+from datasets import *
 
 DEFAULT_MODELS_SAVETO_DIR = "saved_models"
 

@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import torch.utils.data as tud
 
-from dataset import *
+from datasets import *
 from models import *
 
 import my_openxai

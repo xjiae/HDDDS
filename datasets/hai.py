@@ -5,8 +5,9 @@ import torch.utils.data as tud
 import os
 
 class HAIDataset(torch.utils.data.Dataset):
-    def __init__(self, root="data", contents=None, raw=False):
+    def __init__(self, root="data", contents=None, raw=False, label_choice=None):
         assert contents in ["all", "train", "valid"]
+        assert label_choice in ["all", "last", "exist"]
         train_fn, test_fn = "hai/train_processed.csv", "hai/test_processed.csv"
         test_gt = 'hai/test_gt_exp.csv'
         raw_fn = 'hai/raw.csv'

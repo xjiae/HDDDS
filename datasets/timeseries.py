@@ -5,7 +5,8 @@ import torch.utils.data as tud
 import os
 
 class TimeSeriesDataset(torch.utils.data.Dataset):
-    def __init__(self, ds_name, window_size, stride=1, root="data", contents=None, label_choice=None):
+    def __init__(self, ds_name, window_size, stride=1, root="data", contents="all", label_choice="all"):
+        ds_name = ds_name.lower()
         assert ds_name in ["hai", "swat", "wadi"]
         assert contents in ["all", "train", "test", "raw"]
         assert label_choice in ["all", "last", "exist"]
@@ -15,6 +16,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         train_path, test_path = os.path.join(root, train_fn), os.path.join(root, test_fn)
         test_exp_path = os.path.join(root, test_gt)
         raw_path =  os.path.join(root, raw_fn)
+        self.contents = contents
         if contents == "train":
             df =  pd.read_csv(train_path, index_col=0)
             self.explanation = pd.DataFrame(np.zeros((df.shape[0], df.shape[1]-2))) 
@@ -25,15 +27,15 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
             train_data = pd.read_csv(train_path, index_col=0)
             test_data = pd.read_csv(test_path, index_col=0)
             df = pd.concat([train_data, test_data])
-            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
-            test_explanation = pd.read_csv(test_exp_path)
-            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+            train_exp = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
+            test_exp = pd.read_csv(test_exp_path)
+            self.explanation = pd.DataFrame(np.vstack([train_exp.values, test_exp.values]), columns=test_exp.columns)
         elif contents == "raw":
             df =  pd.read_csv(raw_path, index_col=0)
             train_data = pd.read_csv(train_path, index_col=0)
-            train_explanation = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
-            test_explanation = pd.read_csv(test_exp_path)
-            self.explanation = pd.DataFrame(np.vstack([train_explanation.values, test_explanation.values]), columns=test_explanation.columns)
+            train_exp = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
+            test_exp = pd.read_csv(test_exp_path)
+            self.explanation = pd.DataFrame(np.vstack([train_exp.values, test_exp.values]), columns=test_exp.columns)
         else:
             raise NotImplementedError()
         self.num_features = df.shape[1] - 2
@@ -42,13 +44,13 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         self.window_size = window_size
         df_tag = df.drop(columns=['epoch', 'label'])
         self.tag_values = np.array(df_tag, dtype=np.float32)
-        self.valid_idxs = []
+        self.test_idxs = []
         self.y = []
         
         for L in range(len(self.ts) - self.window_size + 1):
             R = L + self.window_size - 1
             if (self.ts[R]-self.ts[L]) == self.window_size - 1:
-                self.valid_idxs.append(L)
+                self.test_idxs.append(L)
                 if label_choice == "last":
                     self.y.append(self.labels.values[R])
                 elif label_choice == "all":
@@ -57,16 +59,16 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
                     self.y.append(max(self.labels.values[L:R+1]))
                 else:
                     raise NotImplementedError()
-        self.y = torch.tensor(self.y).long()
-        self.valid_idxs = np.array(self.valid_idxs, dtype=np.int32)[::stride]
-        self.n_idxs = len(self.valid_idxs)
-        print(f"# of valid windows: {self.n_idxs}")
+        self.y = torch.tensor(np.array(self.y)).long()
+        self.test_idxs = np.array(self.test_idxs, dtype=np.int32)[::stride]
+        self.n_idxs = len(self.test_idxs)
+        print(f"# of {self.contents} windows: {self.n_idxs}")
          
     def __len__(self):
         return self.n_idxs
 
     def __getitem__(self, idx):
-        i = self.valid_idxs[idx]
+        i = self.test_idxs[idx]
         item = {}
         item['y'] = self.y[idx]
         item["ts"] = self.ts[i + self.window_size - 1]
@@ -78,29 +80,32 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         return self.ts
 
 
-def get_timeseries_dataloaders(window_size,
-                                stride = 1,
-                                train_batch_size = 32,
-                                valid_batch_size = 32,
-                                mix_good_and_anom = True,
-                                train_frac = 0.7,
-                                seed = None):
-  good_dataset = TimeSeriesDataset(window_size=window_size, stride=stride, contents="train")
-  anom_dataset = TimeSeriesDataset(window_size=window_size, stride=stride, contents="test")
+def get_timeseries_bundle(ds_name,
+                          window_size=100,
+                          stride = 1,
+                          train_batch_size = 32,
+                          test_batch_size = 32,
+                          train_has_only_goods = False,
+                          train_frac = 0.7,
+                          seed = 1234):
+    good_dataset = TimeSeriesDataset(ds_name, window_size, stride=stride, contents="train")
+    anom_dataset = TimeSeriesDataset(ds_name, window_size, stride=stride, contents="test")
 
-  torch.manual_seed(1234 if seed is None else seed)
-  if mix_good_and_anom:
-    concats = tud.ConcatDataset([good_dataset, anom_dataset])
-    total = len(concats)
-    num_train = int(total * train_frac)
-    trains, valids = tud.random_split(concats, [num_train, total - num_train])
-  else:
-    trains, valids = good_dataset, anom_dataset
+    torch.manual_seed(seed)
+    if train_has_only_goods:
+        trains, tests = good_dataset, anom_dataset
+    else:
+        concats = tud.ConcatDataset([good_dataset, anom_dataset])
+        total = len(concats)
+        num_train = int(total * train_frac)
+        trains, tests = tud.random_split(concats, [num_train, total - num_train])
 
-  train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=False)
-  valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=False)
-  return { "train_dataset" : trains,
-           "valid_dataset" : valids,
-           "train_dataloader" : train_loader,
-           "valid_dataloader" : valid_loader }
+    train_dataloader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=False)
+    test_dataloader = tud.DataLoader(tests, batch_size=test_batch_size, shuffle=False)
+    return { "train_dataset" : trains,
+             "test_dataset" : tests,
+             "train_dataloader" : train_dataloader,
+             "test_dataloader" : test_dataloader
+           }
+
 

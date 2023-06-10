@@ -28,12 +28,12 @@ MVTEC_CATEGORIES = [
     "zipper",
 ]
 
-class MVTecDataset(Dataset):
+class MVTecItemDataset(Dataset):
     def __init__(self,
                  category,
                  root = os.path.join(DATA_DIR, "mvtec-ad"),
                  input_size = 256,  # Loads as (3,256,256) images
-                 is_train = True,
+                 contents = "train",
                  good_value = 0,
                  anom_value = 1):
 
@@ -41,25 +41,23 @@ class MVTecDataset(Dataset):
             category = "metal_nut"
         assert category in MVTEC_CATEGORIES
         self.image_transform = transforms.Compose(
-            [
-                transforms.Resize(input_size),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-            ]
-        )
-        if is_train:
-            self.image_files = glob(
-                os.path.join(root, category, "train", "good", "*.png")
-            )
+            [ transforms.Resize(input_size),
+              transforms.ToTensor(),
+              transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ])
+
+        self.target_transform = transforms.Compose(
+            [ transforms.Resize(input_size),
+              transforms.ToTensor(),
+            ])
+
+        assert contents in ["train", "test"]
+        self.contents = contents
+        if contents == "train":
+            self.image_files = glob(os.path.join(root, category, "train", "good", "*.png"))
         else:
             self.image_files = glob(os.path.join(root, category, "test", "*", "*.png"))
-            self.target_transform = transforms.Compose(
-                [
-                    transforms.Resize(input_size),
-                    transforms.ToTensor(),
-                ]
-            )
-        self.is_train = is_train
+
         self.good_value = good_value
         self.anom_value = anom_value
 
@@ -67,24 +65,21 @@ class MVTecDataset(Dataset):
     def __getitem__(self, index):
         image_file = self.image_files[index]
         image = Image.open(image_file)
-        if image.mode == "L":
-            image = image.convert("RGB")
+        image = image.convert("RGB") if image.mode == "L" else image
         image = self.image_transform(image)
-        if self.is_train:
+        if self.contents == "train":
             target = torch.zeros([1, image.shape[-2], image.shape[-1]])
             return image, self.good_value, target
         else:
             y = self.good_value
             if os.path.dirname(image_file).endswith("good"):
-                target = torch.zeros([1, image.shape[-2], image.shape[-1]])
+              target = torch.zeros([1, image.shape[-2], image.shape[-1]])
             else:
-                target = Image.open(
-                    image_file.replace("/test/", "/ground_truth/").replace(
-                        ".png", "_mask.png"
-                    )
-                )
-                target = self.target_transform(target)
-                y = self.anom_value
+              target = Image.open(
+                  image_file.replace("/test/", "/ground_truth/").replace(".png", "_mask.png")
+              )
+              target = self.target_transform(target)
+              y = self.anom_value
 
             return image, y, target
 
@@ -93,42 +88,43 @@ class MVTecDataset(Dataset):
 
 
 # Returns the train and validation dataset
-def get_mvtec_dataloaders(categories,
-                          train_batch_size = 8,
-                          valid_batch_size = 8,
-                          mix_good_and_anom = True,
-                          train_frac = 0.7,
-                          shuffle = True,
-                          seed = None):
+def get_mvtec_bundle(categories=["all"],
+                     train_batch_size = 8,
+                     test_batch_size = 8,
+                     train_has_only_goods = False,
+                     train_frac = 0.7,
+                     shuffle = True,
+                     seed = 1234):
     good_datasets = []
     anom_datasets = []
     if "all" in categories:
         categories = MVTEC_CATEGORIES
     for cat in categories:
         assert cat in MVTEC_CATEGORIES
-        good_datasets.append(MVTecDataset(cat, is_train=True))
-        anom_datasets.append(MVTecDataset(cat, is_train=False))
+        good_datasets.append(MVTecItemDataset(cat, contents="train"))
+        anom_datasets.append(MVTecItemDataset(cat, contents="test"))
 
-    torch.manual_seed(1234 if seed is None else seed)
-    if mix_good_and_anom:
-      concats = tud.ConcatDataset(good_datasets + anom_datasets)
-      total = len(concats)
-      num_train = int(total * train_frac)
-      trains, valids = tud.random_split(concats, [num_train, total - num_train])
+    torch.manual_seed(seed)
+    if train_has_only_goods:
+        trains = tud.ConcatDataset(good_dataset)
+        tests = tud.ConcatDataset(anom_dataset)
     else:
-      trains = tud.ConcatDataset(good_dataset)
-      valids = tud.ConcatDataset(anom_dataset)
+        concats = tud.ConcatDataset(good_datasets + anom_datasets)
+        total = len(concats)
+        num_train = int(total * train_frac)
+        trains, tests = tud.random_split(concats, [num_train, total - num_train])
 
     trains_perm = torch.randperm(len(trains)) if shuffle else torch.tensor(range(len(trains)))
-    valids_perm = torch.randperm(len(valids)) if shuffle else torch.tensor(range(len(valids)))
+    tests_perm = torch.randperm(len(tests)) if shuffle else torch.tensor(range(len(tests)))
     trains = tud.Subset(trains, indices=trains_perm)
-    valids = tud.Subset(valids, indices=valids_perm)
+    tests = tud.Subset(tests, indices=tests_perm)
 
-    train_loader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=shuffle)
-    valid_loader = tud.DataLoader(valids, batch_size=valid_batch_size, shuffle=shuffle)
+    train_dataloader = tud.DataLoader(trains, batch_size=train_batch_size, shuffle=shuffle)
+    test_dataloader = tud.DataLoader(tests, batch_size=test_batch_size, shuffle=shuffle)
     return { "train_dataset" : trains,
-             "valid_dataset" : valids,
-             "train_dataloader" : train_loader,
-             "valid_dataloader" : valid_loader }
+             "test_dataset" : tests,
+             "train_dataloader" : train_dataloader,
+             "test_dataloader" : test_dataloader
+           }
 
 

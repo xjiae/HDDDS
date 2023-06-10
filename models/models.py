@@ -85,7 +85,7 @@ class LogisticRegression(XwModel):
     self.linear = torch.nn.Linear(self.in_dim, 1)
     self.return_mode = return_mode
 
-   def forward(self, x, w=None):
+   def forward(self, x):
     x = x.flatten(1).float()
     outputs = torch.sigmoid(self.linear(x))
     if self.return_mode == "scalar_score":

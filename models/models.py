@@ -81,19 +81,19 @@ class SimpleNet(XwModel):
 
 class LogisticRegression(XwModel):
    def __init__(self, in_shape, return_mode="scalar_score"):
-     super(LogisticRegression, self).__init__(in_shape, (1,), w_shape=in_shape)
-     self.linear = torch.nn.Linear(self.in_dim, 1)
-     self.return_mode = return_mode
+    super(LogisticRegression, self).__init__(in_shape, (1,), w_shape=in_shape)
+    self.linear = torch.nn.Linear(self.in_dim, 1)
+    self.return_mode = return_mode
 
    def forward(self, x, w=None):
-     x = x.flatten(1).float()
-     outputs = torch.sigmoid(self.linear(x))
-     if self.return_mode == "scalar_score":
-       return outputs  # anom prob
-     elif self.return_mode == "two_class":
-       return torch.cat([1-outputs, outputs], dim=1) # good prob, anom prob
-     else:
-       raise NotImplementedError()
+    x = x.flatten(1).float()
+    outputs = torch.sigmoid(self.linear(x))
+    if self.return_mode == "scalar_score":
+      return outputs  # anom prob
+    elif self.return_mode == "two_class":
+      return torch.cat([1-outputs, outputs], dim=1) # good prob, anom prob
+    else:
+      raise NotImplementedError()
        
 # A simple LSTM implementation
 class SimpleLSTM(XwModel):

@@ -269,7 +269,7 @@ been designed for:<br><br>(Usage Note: Use comma-separated keywords.) -->
 
 (Usage Note: use this to describe the problem space and corresponding
 motivations for the dataset.) -->
-For example:
+<!-- For example: -->
 
 - Evaluating the quality of explainability methods is challenging due to the lack of ground truth explanations, and often rely on hand-crafted heuristics. 
 - Re-aligning explainable models with human explanations

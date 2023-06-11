@@ -1,4 +1,4 @@
-from hddds import *
+from datasets import *
 import numpy as np
 from tqdm import tqdm
 
@@ -15,11 +15,13 @@ def get_stat(ds_name):
     fea_num = 0
     total = 0
     total_ann = 0
-    dataset = get_dataset(ds_name)
+    ret = get_data_bundle(ds_name)
+    dataset = ret['train_dataset']
     total += len(dataset)
     for i in tqdm(range(len(dataset))):
 
         x, y, w = dataset[i]
+        breakpoint()
         fea_num = x.shape[0]
         if y == 1:
             ano_cnt += 1
@@ -38,7 +40,7 @@ def get_stat(ds_name):
 
     print(f"{ano_cnt * fea_num} & {avg_fea:.4f} & {avg_gt_ratio*100:.2f}\% \\\\")
     
-ddds = ["hai_all", "swat_all", "wadi_all"]
+ddds = ["hai", "swat", "wadi"]
 
 for ds_name in ddds:
     print(ds_name)

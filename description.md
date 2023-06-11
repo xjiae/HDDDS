@@ -90,7 +90,7 @@ Algorithmic Labels | 4,629,687,370
 Human Labels | 1,321,591,510
 <!-- Other Characteristics | 123456 -->
 
-**Dataset Summary:** We summarize the basic statistics about the dataset.
+**Dataset Summary:** time-series, image and text data with ground truth explanation labels.
 
 <!-- **Additional Notes:** Add here. -->
 
@@ -169,24 +169,12 @@ considerations. -->
 <!-- info: Select **one**: -->
 - Image Data
 - Text Data
-- Tabular Data
-- Audio Data
-- Video Data
 - Time Series
-- Graph Data
-- Geospatial Data
-- Multimodel (please specify)
-- Unknown
-- Others (please specify)
 
 #### Sampling of Data Points
 <!-- scope: periscope -->
 <!-- info: Provide link(s) to data points or exploratory demos: -->
-- Demo Link
-- Typical Data Point Link
-- Outlier Data Point Link
-- Other Data Point Link
-- Other Data Point Link
+- [Demo Link](/HDDDS/example.ipynb)
 
 #### Data Fields
 <!-- scope: microscope -->
@@ -197,13 +185,13 @@ the example.) -->
 
 Field Name | Field Value | Description
 --- | --- | ---
-Field Name | Field Value | Description
-Field Name | Field Value | Description
-Field Name | Field Value | Description
+x | input data | The input data, time-series or image or pagraph.
+y| target label (0/1) | The target label of attacked/defect/answerable.
+a | explanation | The ground truth feature to explain the target label.
 
-**Above:** Provide a caption for the above table or visualization if used.
+<!-- **Above:** Provide a caption for the above table or visualization if used. -->
 
-**Additional Notes:** Add here
+<!-- **Additional Notes:** Add here -->
 
 #### Typical Data Point
 <!-- width: half -->
@@ -212,23 +200,31 @@ it typical.
 
 **Use additional notes to capture any other relevant information or
 considerations.** -->
-Summarize here. Include any criteria for typicality of data point.
+This is a typical data point:
 
 ```
-{'q_id': '8houtx',
-  'title': 'Why does water heated to room temperature feel colder than the air around it?',
-  'selftext': '',
-  'document': '',
-  'subreddit': 'explainlikeimfive',
-  'answers': {'a_id': ['dylcnfk', 'dylcj49'],
-  'text': ["Water transfers heat more efficiently than air. When something feels cold it's because heat is being transferred from your skin to whatever you're touching. ... Get out of the water and have a breeze blow on you while you're wet, all of the water starts evaporating, pulling even more heat from you."],
-  'score': [5, 2]},
-  'title_urls': {'url': []},
-  'selftext_urls': {'url': []},
-  'answers_urls': {'url': []}}
+{'x': tensor([[0.6273, 0.2893, 0.2775,  ..., 0.4198, 0.3439, 0.5313],
+        [0.6273, 0.2985, 0.2775,  ..., 0.4198, 0.3401, 0.5330],
+        [0.6273, 0.3055, 0.2775,  ..., 0.4198, 0.3439, 0.5292],
+        ...,
+        [0.6273, 0.3265, 0.2775,  ..., 0.4198, 0.3467, 0.4995],
+        [0.6273, 0.3341, 0.2775,  ..., 0.4198, 0.3467, 0.5019],
+        [0.6273, 0.3444, 0.2775,  ..., 0.4198, 0.3467, 0.5022]]),
+  'y': tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0])
+  'a': tensor([[0., 0., 0.,  ..., 0., 0., 0.],
+        [0., 0., 0.,  ..., 0., 0., 0.],
+        [0., 0., 0.,  ..., 0., 0., 0.],
+        ...,
+        [0., 0., 0.,  ..., 0., 0., 0.],
+        [0., 0., 0.,  ..., 0., 0., 0.],
+        [0., 0., 0.,  ..., 0., 0., 0.]], dtype=torch.float64)}
 ```
 
-**Additional Notes:** Add here
+<!-- **Additional Notes:** Add here -->
 
 #### Atypical Data Point
 <!-- width: half -->
@@ -237,7 +233,7 @@ it atypical.
 
 **Use additional notes to capture any other relevant information or
 considerations.** -->
-Summarize here. Include any criteria for atypicality of data point.
+This is an example for SQuAD dataset:
 
 ```
 {'q_id': '8houtx',
@@ -253,25 +249,19 @@ Summarize here. Include any criteria for atypicality of data point.
   'answers_urls': {'url': []}}
 ```
 
-**Additional Notes:** Add here
-
 ## Motivations & Intentions
 ### Motivations
 #### Purpose(s)
 <!-- scope: telescope -->
 <!-- info: Select **one**: -->
-- Monitoring
 - Research
-- Production
-- Others (please specify)
 
 #### Domain(s) of Application
 <!-- scope: periscope -->
 <!-- info: Provide a list of key domains of application that the dataset has
 been designed for:<br><br>(Usage Note: Use comma-separated keywords.) -->
-For example: `Machine Learning`, `Computer Vision`, `Object Detection`.
+`Machine Learning`, `Explainability`, `XAI`, `Anomaly Detection` .
 
-`keyword`, `keyword`, `keyword`
 
 #### Motivating Factor(s)
 <!-- scope: microscope -->
@@ -281,20 +271,17 @@ For example: `Machine Learning`, `Computer Vision`, `Object Detection`.
 motivations for the dataset.) -->
 For example:
 
-- Bringing demographic diversity to imagery training data for object-detection models
-- Encouraging academics to take on second-order challenges of cultural representation in object detection
+- Evaluating the quality of explainability methods is challenging due to the lack of ground truth explanations, and often rely on hand-crafted heuristics. 
+- Re-aligning explainable models with human explanations
 
-Summarize motivation here. Include links where relevant.
 
 ### Intended Use
 #### Dataset Use(s)
 <!-- scope: telescope -->
 <!-- info: Select **one**: -->
-- Safe for production use
 - Safe for research use
-- Conditional use - some unsafe applications
-- Only approved use
-- Others (please specify)
+
+
 
 #### Suitable Use Case(s)
 <!-- scope: periscope -->
@@ -302,13 +289,9 @@ Summarize motivation here. Include links where relevant.
 
 Use additional notes to capture any specific patterns that readers should
 look out for, or other relevant information or considerations. -->
-**Suitable Use Case:** Summarize here. Include links where necessary.
+**Suitable Use Case:** One suitable use case for the dataset is in the field of explainable artificial intelligence (AI). The dataset, Ground Truth eXplanation (GTX), provides a valuable resource for evaluating and improving feature attribution methods. Researchers and practitioners in the field can utilize the dataset to benchmark and compare different algorithms, assess their alignment with human annotations, and identify areas for improvement. The diverse nature of the dataset, spanning various data types such as time-series, images, and text, allows for comprehensive evaluation in different real-world scenarios.
 
-**Suitable Use Case:** Summarize here. Include links where necessary.
-
-**Suitable Use Case:** Summarize here. Include links where necessary.
-
-**Additional Notes:** Add here
+<!-- **Additional Notes:** Add here -->
 
 #### Unsuitable Use Case(s)
 <!-- scope: microscope -->
@@ -316,19 +299,14 @@ look out for, or other relevant information or considerations. -->
 
 Use additional notes to capture any specific patterns that readers should look
 out for, or other relevant information or considerations. -->
-**Unsuitable Use Case:** Summarize here. Include links where necessary.
+**Unsuitable Use Case:** **Suitable Use Case:** One suitable use case for the dataset is in the field of explainable artificial intelligence (AI). The dataset, Ground Truth eXplanation (GTX), provides a valuable resource for evaluating and improving feature attribution methods. Researchers and practitioners in the field can utilize the dataset to benchmark and compare different algorithms, assess their alignment with human annotations, and identify areas for improvement. The diverse nature of the dataset, spanning various data types such as time-series, images, and text, allows for comprehensive evaluation in different real-world scenarios.
 
-**Unsuitable Use Case:** Summarize here. Include links where necessary.
-
-**Unsuitable Use Case:** Summarize here. Include links where necessary.
-
-**Additional Notes:** Add here
 
 #### Research and Problem Space(s)
 <!-- scope: periscope -->
 <!-- info: Provide a description of the specific problem space that this
 dataset intends to address. -->
-Summarize here. Include any specific research questions.
+The specific problem space that the Ground Truth eXplanation (GTX) dataset aims to address is the evaluation and improvement of feature attribution methods in explainable artificial intelligence (AI). The dataset seeks to tackle the challenge of assessing the alignment between feature attributions and human annotations, providing a quantitative benchmark for evaluating the quality of these methods.
 
 #### Citation Guidelines
 <!-- scope: microscope -->
@@ -337,19 +315,14 @@ and/or production.
 
 Use additional notes to capture any specific patterns that readers should look
 out for, or other relevant information or considerations. -->
-**Guidelines & Steps:** Summarize here. Include links where necessary.
-
+**Guidelines & Steps:** Please cite our woek as follows (to be updated later):
 **BiBTeX:**
 ```
-@article{kuznetsova2020open,
-  title={The open images dataset v4},
-  author={Kuznetsova, Alina and Rom, Hassan and Alldrin, and others},
-  journal={International Journal of Computer Vision},
-  volume={128},
-  number={7},
-  pages={1956--1981},
-  year={2020},
-  publisher={Springer}
+@article{snp2023,
+  title={Ground Truth eXplanation Datset},
+  author={../},
+  journal={...},
+  year={2023}
 }
 ```
 

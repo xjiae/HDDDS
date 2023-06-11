@@ -17,45 +17,24 @@ in creating the Data Card.) -->
 - **Anton Xue, University of Pennsylvania:** (Manager)
 
 ## Authorship
-### Publishers
-#### Publishing Organization(s)
-<!-- scope: telescope -->
-<!-- info: Provide the names of the institution or organization responsible
-for publishing the dataset: -->
-University of Pennsylvania
 
-#### Contact Detail(s)
-<!-- scope: microscope -->
-<!-- info: Provide publisher contact details: -->
-- **Publishing POC:** Xiayan Ji
-- **Affiliation:**  University of Pennsylvania
-- **Contact:** xjiae@seas.upenn.edu
-
-<!-- ### Dataset Owners
+### Dataset Owners
 #### Team(s)
 <!-- scope: telescope -->
 <!-- info: Provide the names of the groups or team(s) that own the dataset: -->
 University of Pennsylvania
 
-#### Contact Detail(s)
-<!-- scope: periscope -->
-<!-- info: Provide pathways to contact dataset owners: -->
-- **Dataset Owner(s):** Provide the names of the dataset owners
-- **Affiliation:** Provide the affiliation of the dataset owners
-- **Contact:** Provide the email of the dataset owner
-- **Group Email:** Provide a link to the mailing-list@server.com for the dataset owner team
-- **Website:** Provide a link to the website for the dataset owner team -->
-
-<!-- #### Author(s)
+#### Author(s)
 <!-- scope: microscope -->
 <!-- info: Provide the details of all authors associated with the dataset:
-
 (Usage Note: Provide the affiliation and year if different from publishing
 institutions or multiple affiliations.) -->
-- , Title, Affiliation, YYYY
-- Name, Title, Affiliation, YYYY
-- Name, Title, Affiliation, YYYY
-- Name, Title, Affiliation, YYYY
+- Xiayan Ji, Ph.D. Student, University of Pennsylvania, 2023
+- Anton Xue, Ph.D. Student, University of Pennsylvania, 2023
+- Rajeev Alur, Professor, University of Pennsylvania, 2023
+- Oleg Sokolsky, Professor, University of Pennsylvania, 2023
+- Insup Lee, Professor, University of Pennsylvania, 2023
+- Eric Wong, Assistant Professor, University of Pennsylvania, 2023
 
 ### Funding Sources
 #### Institution(s)
@@ -81,6 +60,12 @@ Summarize here. Link to documents if available.
 
 **Additional Notes:** Add here -->
 
+#### Contact Detail(s)
+<!-- scope: periscope -->
+<!-- info: Provide pathways to contact dataset owners: -->
+- **Point of Contact:** Xiayan Ji
+- **Affiliation:** University of Pennsylvania
+- **Contact:** xjiae@seas.upenn.edu
 ## Dataset Overview
 #### Data Subject(s)
 <!-- scope: telescope -->

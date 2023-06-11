@@ -316,6 +316,8 @@ and/or production.
 Use additional notes to capture any specific patterns that readers should look
 out for, or other relevant information or considerations. -->
 **Guidelines & Steps:** Please cite our woek as follows (to be updated later):
+
+
 **BiBTeX:**
 ```
 @article{snp2023,
@@ -393,7 +395,7 @@ type.) -->
 
 **Primary modality of collection data:**
 
-*Usage Note: Select one for this collection type.*
+<!-- *Usage Note: Select one for this collection type.* -->
 
 - Image Data
 - Text Data
@@ -402,9 +404,9 @@ type.) -->
 
 **Update Frequency for collected data:**
 
-*Usage Note: Select one for this collection type.*
+<!-- *Usage Note: Select one for this collection type.* -->
 
-- Hourly
+
 - Static
 
 
@@ -463,7 +465,7 @@ When it comes to annotations, we have a dedicated process to handle them. For gr
 
 By leveraging these data processing techniques, we ensure that the data is appropriately prepared and annotated for further analysis and evaluation. This enables us to derive valuable insights and make informed decisions based on the processed and labeled data.
 
-**Methods employed:** .
+**Methods employed:** Normalization.
 
 **Tools or libraries:** [Min-Max scaling](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html).
 

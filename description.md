@@ -326,184 +326,52 @@ out for, or other relevant information or considerations. -->
 }
 ```
 
-**Additional Notes:** Add here
+
 
 ## Access, Rentention, & Wipeout
 ### Access
 #### Access Type
 <!-- scope: telescope -->
 <!-- info: Select **one**: -->
-- Internal - Unrestricted
-- Internal - Restricted
 - External - Open Access
-- Others (please specify)
+
 
 #### Documentation Link(s)
 <!-- scope: periscope -->
 <!-- info: Provide links that describe documentation to access this
 dataset: -->
-- Dataset Website URL
-- GitHub URL
+- [GitHub URL](https://github.com/xjiae/HDDDS)
 
-#### Prerequisite(s)
-<!-- scope: microscope -->
-<!-- info: Please describe any required training or prerequisites to access
-this dataset. -->
-For example:
 
-This dataset requires membership in [specific] database groups:
-
-- Complete the [Mandatory Training]
-- Read [Data Usage Policy]
-- Initiate a Data Requesting by filing
 
 #### Policy Link(s)
 <!-- scope: periscope -->
 <!-- info: Provide a link to the access policy: -->
-- Direct download URL
-- Other repository URL
+- Direct download URL: [link](https://drive.google.com/uc?id=1oxll8MirhzR3skk0MWpznqeLP9k4Khv9&export=download-anyway&confirm=t&uuid=e5c2b20b-2f3d-4f4f-8e4f-b77d0d32a35d&at=AKKF8vx6FMG8ziRR23ieeLqDfLqN:1684956011585)
+
 
 Code to download data:
 ```
-...
+wget -O data.zip "https://drive.google.com/uc?id=1oxll8MirhzR3skk0MWpznqeLP9k4Khv9&export=download-anyway&confirm=t&uuid=e5c2b20b-2f3d-4f4f-8e4f-b77d0d32a35d&at=AKKF8vx6FMG8ziRR23ieeLqDfLqN:1684956011585"
+unzip data.zip
 ```
 
-#### Access Control List(s)
-<!-- scope: microscope -->
-<!-- info: List and summarize any access control lists associated with this
-dataset. Include links where necessary.
 
-Use additional notes to capture any other information relevant to accessing
-the dataset. -->
-**Access Control List:** Write summary and notes here.
-
-**Access Control List:** Write summary and notes here.
-
-**Access Control List:** Write summary and notes here.
-
-**Additional Notes:** Add here
 
 ### Retention
 #### Duration
 <!-- scope: periscope -->
 <!-- info: Specify the duration for which this dataset can be retained: -->
-Specify duration in days, months, or years.
-
-#### Policy Summary
-<!-- scope: microscope -->
-<!-- info: Summarize the retention policy for this dataset. -->
-**Retention Plan ID:** Write here
-
-**Summary:** Write summary and notes here
-
-#### Process Guide
-<!-- scope: periscope -->
-<!-- info: Summarize any requirements and related steps to retain the dataset.
-
-Use additional notes to capture any other relevant information or
-considerations. -->
-For example:
-
-This dataset compiles with [standard policy guidelines].
-
-**Additional Notes:** Add here
-
-#### Exception(s) and Exemption(s)
-<!-- scope: microscope -->
-<!-- info: Summarize any exceptions and related steps to retain the dataset.
-Include links where necessary.
-
-Use additional notes to capture any other relevant information or
-considerations. -->
-**Exemption Code:** `ANONYMOUS_DATA` /
-`EMPLOYEE_DATA` / `PUBLIC_DATA` /
-`INTERNAL_BUSINESS_DATA` /
-`SIMULATED_TEST_DATA`
-
-**Summary:** Write summary and notes here.
-
-**Additional Notes:** Add here
-
-### Wipeout and Deletion
-#### Duration
-<!-- scope: periscope -->
-<!-- info: Specify the duration after which this dataset should be deleted or
-wiped out: -->
-Specify duration in days, months, or years.
-
-#### Deletion Event Summary
-<!-- scope: microscope -->
-<!-- info: Summarize the sequence of events and allowable processing for data
-deletion.
-
-Use additional notes to capture any other relevant information or
-considerations. -->
-**Sequence of deletion and processing events:**
-
-- Summarize first event here
-- Summarize second event here
-- Summarize third event here
-
-**Additional Notes:** Add here
-
-#### Acceptable Means of Deletion
-<!-- scope: periscope -->
-<!-- info: List the acceptable means of deletion: -->
-- Write acceptable means of deletion
-- Write acceptable means of deletion
-- Write acceptable means of deletion
-
-#### Post-Deletion Obligations
-<!-- scope: microscope -->
-<!-- info: Summarize the sequence of obligations after a deletion event.
-
-**Use additional notes to capture any other relevant information or
-considerations.** -->
-**Sequence of post-deletion obligations:**
-
-- Summarize first obligation here
-- Summarize second obligation here
-- Summarize third obligation here
-
-**Additional Notes:** Add here
-
-#### Operational Requirement(s)
-<!-- scope: periscope -->
-<!-- info: List any wipeout integration operational requirements: -->
-**Wipeout Integration Operational Requirements:**
-
-- Write first requirement here
-- Write second requirement here
-- Write third requirement here
-
-#### Exceptions and Exemptions
-<!-- scope: microscope -->
-<!-- info: Summarize any exceptions and related steps to a deletion event.
-
-**Use additional notes to capture any other relevant information or
-considerations.** -->
-**Policy Exception bug:** [bug]
-
-**Summary:** Write summary and notes here
-
-**Additional Notes:** Add here
+Infinite duration.
 
 ## Provenance
 ### Collection
 #### Method(s) Used
 <!-- scope: telescope -->
 <!-- info: Select **all applicable** methods used to collect data: -->
-- API
-- Artificially Generated
-- Crowdsourced - Paid
-- Crowdsourced - Volunteer
-- Vendor Collection Efforts
-- Scraped or Crawled
-- Survey, forms, or polls
+
 - Taken from other existing datasets
-- Unknown
-- To be determined
-- Others (please specify)
+
 
 #### Methodology Detail(s)
 <!-- scope: periscope -->
@@ -516,13 +384,12 @@ considerations.
 type.) -->
 **Collection Type**
 
-**Source:** Describe here. Include links where available.
+**Source:** [HAI](https://github.com/icsdataset/hai), [SWaT, WADI](https://itrust.sutd.edu.sg/itrust-labs_datasets/), [MVTec](https://www.mvtec.com/company/research/datasets/mvtec-ad), [SQuAD](https://rajpurkar.github.io/SQuAD-explorer/).
 
-**Platform:** [Platform Name], Describe platform here. Include links where relevant.
 
-**Is this source considered sensitive or high-risk?** [Yes/No]
+**Is this source considered sensitive or high-risk?** [No]
 
-**Dates of Collection:** [MMM YYYY - MMM YYYY]
+**Dates of Collection:** [05 2023 - 06 2023]
 
 **Primary modality of collection data:**
 
@@ -530,37 +397,16 @@ type.) -->
 
 - Image Data
 - Text Data
-- Tabular Data
-- Audio Data
-- Video Data
 - Time Series
-- Graph Data
-- Geospatial Data
-- Unknown
-- Multimodal (please specify)
-- Others (please specify)
+
 
 **Update Frequency for collected data:**
 
 *Usage Note: Select one for this collection type.*
 
-- Yearly
-- Quarterly
-- Monthly
-- Biweekly
-- Weekly
-- Daily
 - Hourly
 - Static
-- Others (please specify)
 
-**Additional Links for this collection:**
-
-- [Access Policy]
-- [Wipeout Policy]
-- [Retention Policy]
-
-**Additional Notes:** Add here
 
 #### Source Description(s)
 <!-- scope: microscope -->
@@ -568,22 +414,19 @@ type.) -->
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-- **Source:** Describe here. Include links, data examples, metrics, visualizations where relevant.
-- **Source:** Describe here. Include links, data examples, metrics, visualizations where relevant.
-- **Source:** Describe here. Include links, data examples, metrics, visualizations where relevant.
+- **Source:** Hardware-In-the-Loop-based Augmented ICS Security Dataset [(HAI)](https://github.com/icsdataset/hai)  The HAI dataset was collected from a realistic industrial control system (ICS) testbed, augmented with a Hardware-In-the-Loop (HIL) simulator for 379.3 hours. The HIL simulator emulates two crucial components of the power generation domain: steam-turbine power generation and pumped-storage hydropower generation, with a total of m = 86 features.
+- **Source:** [SWaT, WADI](https://itrust.sutd.edu.sg/itrust-labs_datasets/). The Secure Water Treatment testbed serves as a scaled-down replica of a real-world industrial water treatment plant. It operates at a reduced capacity, producing five gallons per minute of water for over 11 days. The treatment process involves the utilization of membrane-based ultrafiltration and reverse osmosis units for effective water filtration, comprising of \(m = 51\) features in total.   WADI is an extension of the SWaT testbed featuring additional components and functionalities such as chemical dosing systems, booster pumps and valves, as well as instrumentation and analyzers. It is collected over 16 days with \(m = 127\) dimensions.
+- **Source:** [MVTec](https://www.mvtec.com/company/research/datasets/mvtec-ad) is an industrial inspection dataset designed for benchmarking defects detection methods.
+It consists of a 15 categories with a total of more than 5000 high-resolution (\(3 \times 1024 \times 1024\)) images.
+Each category includes a set of defect-free training images and a test set containing images with different types of defects, as well as defect-free images. The dataset provides pixel-accurate ground truth annotations for the defect regions, which have been carefully annotated and reviewed by the authors to align with human interpretation of real-world defects.
+- **Source:** [SQuAD](https://rajpurkar.github.io/SQuAD-explorer/) is a widely used reading comprehension dataset that includes 107,785 question-answer pairs based on 536 Wikipedia articles. The dataset was generated by crowdworkers who formulated questions and provided specific text segments or spans as answers. The answers have undergone rigorous crowdworkers selection, additional answer collection, and manual crosscheck processes, making them reliable ground truth explanations for the corresponding questions.
 
-**Additional Notes:** Add here
 
 #### Collection Cadence
 <!-- scope: telescope -->
 <!-- info: Select **all applicable**: -->
 **Static:** Data was collected once from single or multiple sources.
 
-**Streamed:** Data is continuously acquired from single or multiple sources.
-
-**Dynamic:** Data is updated regularly from single or multiple sources.
-
-**Others:** Please specify
 
 #### Data Integration
 <!-- scope: periscope -->
@@ -599,25 +442,8 @@ source.) -->
 
 **Included Fields**
 
-Data fields that were collected and are included in the dataset.
+Data fields of each datasets were collected and are included in the dataset. Each of them has high dimension (>50) which is not displayed here. Please refer to individual source for the detailed features.
 
-Field Name | Description
---- | ---
-Field Name | Describe here. Include links, data examples, metrics, visualizations where relevant.
-Field Name | Describe here. Include links, data examples, metrics, visualizations where relevant.
-
-**Additional Notes:** Add here
-
-**Excluded Fields**
-
-Data fields that were collected but are excluded from the dataset.
-
-Field Name | Description
---- | ---
-Field Name | Describe here. Include links, data examples, metrics, visualizations where relevant.
-Field Name | Describe here. Include links, data examples, metrics, visualizations where relevant.
-
-**Additional Notes:** Add here
 
 #### Data Processing
 <!-- scope: microscope -->
@@ -631,13 +457,17 @@ relevant information or considerations.
 collection method.) -->
 **Collection Method or Source**
 
-**Description:** Describe here. Include links where relevant.
+**Description:** In our data processing pipeline, we employ different techniques based on the data type. For timeseries data, we apply normalization to ensure it falls within the range of [0, 1], enabling better comparison and analysis across different variables. On the other hand, we do not perform any additional processing for image and text data, as they are inherently suitable for analysis without preprocessing steps.
 
-**Methods employed:** Describe here. Include links where relevant.
+When it comes to annotations, we have a dedicated process to handle them. For ground truth annotation files, which are typically stored in formats such as Excel or PDF, we extract the relevant information such as start time, end time, and the sensors involved in the attack. We then align this information with the raw data to ensure accurate labeling of explanations. This process allows us to establish a clear link between the annotated events and the underlying data, facilitating the evaluation and analysis of the explanations provided by our models.
 
-**Tools or libraries:** Describe here. Include links where relevant.
+By leveraging these data processing techniques, we ensure that the data is appropriately prepared and annotated for further analysis and evaluation. This enables us to derive valuable insights and make informed decisions based on the processed and labeled data.
 
-**Additional Notes:** Add here
+**Methods employed:** .
+
+**Tools or libraries:** [Min-Max scaling](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html).
+
+
 
 ### Collection Criteria
 #### Data Selection

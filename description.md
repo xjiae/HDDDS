@@ -1,11 +1,11 @@
-# Ground Truth eXplanation Dataset
+# Ground Truth eXplanation Dataset (GTX)
 
 The Ground Truth eXplanation (GTX) dataset is a curated collection that addresses the challenge of evaluating the quality of explainability methods. Existing approaches often lack ground truth explanations and heavily rely on hand-crafted heuristics. In response, the GTX dataset has been created to assess the alignment of feature attributions with human annotations. It contains time-series data (HAI, SWaT, WADI) from the industrial control domain, image data (MVTec) from the defect inspection domain, and text data (SQuAD) from the machine comprehension domain.
 
 #### Dataset Link
 <!-- info: Provide a link to the dataset: -->
 <!-- width: half -->
-Dataset Link: [HAI](https://github.com/icsdataset/hai), [SWaT, WADI](https://itrust.sutd.edu.sg/itrust-labs_datasets/), [MVTec](https://www.mvtec.com/company/research/datasets/mvtec-ad), [SQuAD](https://rajpurkar.github.io/SQuAD-explorer/)
+Dataset Link: [HAI](https://github.com/icsdataset/hai), [SWaT, WADI](https://itrust.sutd.edu.sg/itrust-labs_datasets/), [MVTec](https://www.mvtec.com/company/research/datasets/mvtec-ad), [SQuAD](https://rajpurkar.github.io/SQuAD-explorer/).
 
 #### Data Card Author(s)
 <!-- info: Select **one role per** Data Card Author:
@@ -13,9 +13,8 @@ Dataset Link: [HAI](https://github.com/icsdataset/hai), [SWaT, WADI](https://itr
 (Usage Note: Select the most appropriate choice to describe the author's role
 in creating the Data Card.) -->
 <!-- width: half -->
-- **Name, Team:** (Owner / Contributor / Manager)
-- **Name, Team:** (Owner / Contributor / Manager)
-- **Name, Team:** (Owner / Contributor / Manager)
+- **Xiayan Ji, University of Pennsylvania:** (Manager)
+- **Anton Xue, University of Pennsylvania:** (Manager)
 
 ## Authorship
 ### Publishers
@@ -23,35 +22,20 @@ in creating the Data Card.) -->
 <!-- scope: telescope -->
 <!-- info: Provide the names of the institution or organization responsible
 for publishing the dataset: -->
-Organization Name
-
-#### Industry Type(s)
-<!-- scope: periscope -->
-<!-- info: Select **all applicable** industry types to which the publishing
-organizations belong: -->
-- Corporate - Tech
-- Corporate - Non-Tech (please specify)
-- Academic - Tech
-- Academic - Non-Tech (please specify)
-- Not-for-profit - Tech
-- Not-for-profit - Non-Tech (please specify)
-- Individual (please specify)
-- Others (please specify)
+University of Pennsylvania
 
 #### Contact Detail(s)
 <!-- scope: microscope -->
 <!-- info: Provide publisher contact details: -->
-- **Publishing POC:** Provide the name for a POC for this dataset's publishers
-- **Affiliation:** Provide the POC's institutional affiliation
-- **Contact:** Provide the POC's contact details
-- **Mailing List:** Provide a mailing list if available
-- **Website:** Provide a website for the dataset if available
+- **Publishing POC:** Xiayan Ji
+- **Affiliation:**  University of Pennsylvania
+- **Contact:** xjiae@seas.upenn.edu
 
-### Dataset Owners
+<!-- ### Dataset Owners
 #### Team(s)
 <!-- scope: telescope -->
 <!-- info: Provide the names of the groups or team(s) that own the dataset: -->
-Name of Group or Team
+University of Pennsylvania
 
 #### Contact Detail(s)
 <!-- scope: periscope -->
@@ -60,15 +44,15 @@ Name of Group or Team
 - **Affiliation:** Provide the affiliation of the dataset owners
 - **Contact:** Provide the email of the dataset owner
 - **Group Email:** Provide a link to the mailing-list@server.com for the dataset owner team
-- **Website:** Provide a link to the website for the dataset owner team
+- **Website:** Provide a link to the website for the dataset owner team -->
 
-#### Author(s)
+<!-- #### Author(s)
 <!-- scope: microscope -->
 <!-- info: Provide the details of all authors associated with the dataset:
 
 (Usage Note: Provide the affiliation and year if different from publishing
 institutions or multiple affiliations.) -->
-- Name, Title, Affiliation, YYYY
+- , Title, Affiliation, YYYY
 - Name, Title, Affiliation, YYYY
 - Name, Title, Affiliation, YYYY
 - Name, Title, Affiliation, YYYY
@@ -95,20 +79,16 @@ the years YYYY-YYYY.*
 
 Summarize here. Link to documents if available.
 
-**Additional Notes:** Add here
+**Additional Notes:** Add here -->
 
 ## Dataset Overview
 #### Data Subject(s)
 <!-- scope: telescope -->
 <!-- info: Select ***all applicable**** subjects contained the dataset: -->
-- Sensitive Data about people
-- Non-Sensitive Data about people
-- Data about natural phenomena
 - Data about places and objects
 - Synthetically generated data
 - Data about systems or products and their behaviors
-- Unknown
-- Others (Please specify)
+
 
 #### Dataset Snapshot
 <!-- scope: periscope -->
@@ -117,158 +97,31 @@ to include relevant information, considerations, and links to table(s) with
 more detailed breakdowns.) -->
 Category | Data
 --- | ---
-Size of Dataset | 123456 MB
-Number of Instances | 123456
-Number of Fields | 123456
-Labeled Classes | 123456
-Number of Labels | 123456789
-Average Labeles Per Instance | 123456
-Algorithmic Labels | 123456789
-Human Labels | 123456789
-Other Characteristics | 123456
+Size of Dataset | 12 GB
+Number of Instances | 3,798,242
+Number of Labels (explanation) | 5,951,278,880
+Average Labeles Per Instance | 1566.85
+Algorithmic Labels | 4,629,687,370
+Human Labels | 1,321,591,510
+<!-- Other Characteristics | 123456 -->
 
-**Above:** Provide a caption for the above table of visualization.
+**Dataset Summary:** We summarize the basic statistics about the dataset.
 
-**Additional Notes:** Add here.
+<!-- **Additional Notes:** Add here. -->
 
 #### Content Description
 <!-- scope: microscope -->
 <!-- info: Provide a short description of the content in a data point: -->
-Summarize here. Include links if available.
+Each content contains an input data (x), a target label (y) and an explanation (a).
 
-**Additional Notes:** Add here.
+**Additional Notes:** for SQuAD, the format is slightly different, the input and target are combined together to better be fitted to a language model. In addition, the explanation is in the form of a start and end position.
 
-#### Descriptive Statistics
-<!-- width: full -->
-<!-- info: Provide basic descriptive statistics for each field.
-
-Use additional notes to capture any other relevant information or
-considerations.
-
-Usage Note: Some statistics will be relevant for numeric data, for not for
-strings. -->
-
-Statistic | Field Name | Field Name | Field Name | Field Name | Field Name | Field Name
---- | --- | --- | --- | --- | --- | ---
-count |
-mean |
-std |
-min |
-25% |
-50% |
-75% |
-max |
-mode |
-
-**Above:** Provide a caption for the above table or visualization.
-
-**Additional Notes:** Add here.
-
-### Sensitivity of Data
-#### Sensitivity Type(s)
-<!-- scope: telescope -->
-<!-- info: Select ***all applicable*** data types present in the dataset: -->
-- User Content
-- User Metadata
-- User Activity Data
-- Identifiable Data
-- S/PII
-- Business Data
-- Employee Data
-- Pseudonymous Data
-- Anonymous Data
-- Health Data
-- Children’s Data
-- None
-- Others (Please specify)
-
-#### Field(s) with Sensitive Data
-<!-- scope: periscope -->
-<!-- info: List fields in the dataset that contain S/PII, and specify if their
-collection was intentional or unintentional.
-
-Use additional notes to capture any other relevant information or
-considerations. -->
-**Intentional Collected Sensitive Data**
-
-(S/PII were collected as a part of the
-dataset creation process.)
-
-Field Name | Description
---- | ---
-Field Name | Type of S/PII
-Field Name | Type of S/PII
-Field Name | Type of S/PII
-
-**Unintentionally Collected Sensitive Data**
-
-(S/PII were not explicitly collected as a
-part of the dataset creation process but
-can be inferred using additional
-methods.)
-
-Field Name | Description
---- | ---
-Field Name | Type of S/PII
-Field Name | Type of S/PII
-Field Name | Type of S/PII
-
-**Additional Notes:** Add here
-
-#### Security and Privacy Handling
-<!-- scope: microscope -->
-<!-- info: Summarize the measures or steps to handle sensitive data in this
-dataset.
-
-Use additional notes to capture any other relevant information or
-considerations. -->
-
-Summarize here. Include links and metrics where applicable.
-
-**Method:** description
-
-**Method:** description
-
-**Method:** description
-
-**Additional Notes:** Add here
 
 #### Risk Type(s)
 <!-- scope: telescope -->
 <!-- info: Select **all applicable** risk types presenting from the
 dataset: -->
-- Direct Risk
-- Indirect Risk
-- Residual Risk
 - No Known Risks
-- Others (Please Specify)
-
-#### Supplemental Link(s)
-<!-- scope: periscope -->
-<!-- info: Provide link(s) for documentation pertaining to sensitive data in
-the dataset: -->
-**Link Name or Document Type:** link
-
-**Link Name or Document Type:** link
-
-**Link Name or Document Type:** link
-
-#### Risk(s) and Mitigation(s)
-<!-- scope: microscope -->
-<!-- info: Summarize the steps taken to identify and mitigate risks from PII
-or sensitive information.
-
-Use additional notes to capture any other relevant information or
-considerations. -->
-Summarize here. Include links and metrics where applicable.
-
-**Risk type:** Description + Mitigations
-
-**Risk type:** Description + Mitigations
-
-**Risk type:** Description + Mitigations
-
-**Additional Notes:** Add here
 
 ### Dataset Version and Maintenance
 #### Maintenance Status
@@ -278,27 +131,14 @@ Summarize here. Include links and metrics where applicable.
 have been or will continue to be
 made available.
 
-**Actively Maintained** - No new versions will be made
-available, but this dataset will
-be actively maintained,
-including but not limited to
-updates to the data.
-
-**Limited Maintenance** - The data will not be updated,
-but any technical issues will be
-addressed.
-
-**Deprecated** - This dataset is obsolete or is
-no longer being maintained.
-
 #### Version Details
 <!-- scope: periscope -->
 <!-- info: Provide details about **this** version of the dataset: -->
 **Current Version:** 1.0
 
-**Last Updated:** MM/YYYY
+**Last Updated:** 06/2023
 
-**Release Date:** MM/YYYY
+**Release Date:** 06/2023
 
 #### Maintenance Plan
 <!-- scope: microscope -->
@@ -306,32 +146,27 @@ no longer being maintained.
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-Summarize here. Include links and metrics where applicable.
+In our maintenance plan, our primary focus will be on preserving and leveraging the existing data that we have collected. This involves ensuring the integrity and security of the data through regular backups, implementing robust data storage practices, and conducting periodic audits to identify any potential issues or anomalies. Additionally, we recognize the growing importance of graph datasets in various domains. To capitalize on this, we will actively explore and evaluate potential graph datasets that align with our needs and objectives. This includes seeking out reliable sources, assessing the quality and relevance of the data, and integrating suitable graph datasets into our existing infrastructure. By incorporating graph datasets, we aim to enhance the depth and breadth of our analysis, uncover hidden patterns and relationships, and gain valuable insights that can drive informed decision-making and optimize our operations. Our maintenance plan thus combines the preservation of existing data with the exploration of new graph datasets, ensuring a comprehensive and forward-looking approach to data management and utilization.
 
-**Versioning:** Summarize here. Include information about criteria for
-versioning the dataset.
+**Versioning:** The dataset is versioned based on several criteria. This includes significant updates or changes in the data collection process, methodology, or data sources. Corrections or improvements to enhance data accuracy or reliability also warrant a new version. Substantial additions or expansions, such as new data points or variables, are considered for versioning. User feedback and requests for specific modifications are also taken into account. The versioning process ensures transparency, traceability, and reproducibility, keeping the dataset relevant and adaptable to evolving needs.
 
-**Updates:** Summarize here. Include information about criteria for refreshing
-or updating the dataset.
+**Updates:** The dataset is refreshed or updated based on regular time-based updates, changes in data sources or collection methodologies, user feedback, and advancements in technology or analytical techniques. This ensures the dataset remains relevant, accurate, and valuable for users in making informed decisions.
 
-**Errors:** Summarize here. Include information about criteria for refreshing
-or updating the dataset.
+**Errors:** Error handling for the dataset involves systematic procedures to identify and correct errors, maintaining data integrity through documentation and tracking, and implementing measures to prevent future errors. These criteria ensure data quality, transparency, and reliability for users.
 
-**Feedback:** Summarize here. Include information about criteria for refreshing
-or updating the dataset.
+**Feedback:** The dataset incorporates criteria for feedback by actively seeking input from users and stakeholders. Feedback on the dataset's content, quality, and usability is welcomed and considered for future updates and improvements. This iterative feedback process ensures that the dataset meets the needs and expectations of its users, enhancing its relevance and value.
 
-**Additional Notes:** Add here
 
 #### Next Planned Update(s)
 <!-- scope: periscope -->
 <!-- info: Provide details about the next planned update: -->
 **Version affected:** 1.0
 
-**Next data update:** MM/YYYY
+**Next data update:** 08/2023
 
 **Next version:** 1.1
 
-**Next version update:** MM/YYYY
+**Next version update:** 08/2023
 
 #### Expected Change(s)
 <!-- scope: microscope -->
@@ -340,13 +175,8 @@ on the next update.
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-**Updates to Data:** Summarize here. Include links, charts, and visualizations
-as appropriate.
+**Updates to Data:** Next version of the dataset will possibly include suitable graph dataset.
 
-**Updates to Dataset:** Summarize here. Include links, charts, and
-visualizations as appropriate.
-
-**Additional Notes:** Add here
 
 ## Example of Data Points
 #### Primary Data Modality
@@ -2533,94 +2363,5 @@ Source: Write here and share link
 
 Interpretation: Write here
 
-#### Term of Art
-Definition: Write here
 
-Source: Write here and share link
 
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-#### Term of Art
-Definition: Write here
-
-Source: Write here and share link
-
-Interpretation: Write here
-
-## Reflections on Data
-<!-- info: Use this space to include any additional information about the
-dataset that has not been captured by the Data Card. For example,
-does the dataset contain data that might be offensive, insulting, threatening,
-or might otherwise cause anxiety? If so, please contact the appropriate parties
-to mitigate any risks. -->
-### Title
-Write notes here.
-
-### Title
-Write notes here.
-
-### Title
-Write notes here.

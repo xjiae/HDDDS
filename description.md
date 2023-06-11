@@ -1,14 +1,11 @@
-# Dataset Name (Acronym)
-Write a short summary describing your dataset (limit
-200 words). Include information about the content
-and topic of the data, sources and motivations for the
-dataset, benefits and the problems or use cases it is
-suitable for.
+# Ground Truth eXplanation Dataset
+
+The Ground Truth eXplanation (GTX) dataset is a curated collection that addresses the challenge of evaluating the quality of explainability methods. Existing approaches often lack ground truth explanations and heavily rely on hand-crafted heuristics. In response, the GTX dataset has been created to assess the alignment of feature attributions with human annotations. It contains time-series data (HAI, SWaT, WADI) from the industrial control domain, image data (MVTec) from the defect inspection domain, and text data (SQuAD) from the machine comprehension domain.
 
 #### Dataset Link
 <!-- info: Provide a link to the dataset: -->
 <!-- width: half -->
-Dataset Link
+Dataset Link: [HAI](https://github.com/icsdataset/hai), [SWaT, WADI](https://itrust.sutd.edu.sg/itrust-labs_datasets/), [MVTec](https://www.mvtec.com/company/research/datasets/mvtec-ad), [SQuAD](https://rajpurkar.github.io/SQuAD-explorer/)
 
 #### Data Card Author(s)
 <!-- info: Select **one role per** Data Card Author:

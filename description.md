@@ -478,11 +478,9 @@ By leveraging these data processing techniques, we ensure that the data is appro
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-- **Collection Method of Source:** Summarize data selection criteria here. Include links where available.
-- **Collection Method of Source:** Summarize data selection criteria here. Include links where available.
-- **Collection Method of Source:** Summarize data selection criteria here. Include links where available.
+- **Collection Method of Source:** We select the dataset based on availability of ground truth of explanations.
 
-**Additional Notes:** Add here
+
 
 #### Data Inclusion
 <!-- scope: periscope -->
@@ -490,11 +488,8 @@ considerations. -->
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-- **Collection Method of Source:** Summarize data inclusion criteria here. Include links where available.
-- **Collection Method of Source:** Summarize data inclusion criteria here. Include links where available.
-- **Collection Method of Source:** Summarize data inclusion criteria here. Include links where available.
+- **Collection Method of Source:** Same as above.
 
-**Additional Notes:** Add here
 
 #### Data Exclusion
 <!-- scope: microscope -->
@@ -502,11 +497,8 @@ considerations. -->
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-- **Collection Method of Source:** Summarize data exclusion criteria here. Include links where available.
-- **Collection Method of Source:** Summarize data exclusion criteria here. Include links where available.
-- **Collection Method of Source:** Summarize data exclusion criteria here. Include links where available.
+- **Collection Method of Source:** We exclude data that does not have ground truth for explanation.
 
-**Additional Notes:** Add here
 
 ### Relationship to Source
 #### Use & Utility(ies)

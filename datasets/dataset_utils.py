@@ -17,9 +17,10 @@ def shuffle_dataset(dataset, seed=None):
 
 
 # Assume the class is 0/1, and we want to have balanced 0/1s
-def get_tabular_balanced_subset(dataset, seed=None):
+# pos_mask is binary vector of shape (N,) where N == len(dataset)
+def get_binary_balanced_subset(dataset, pos_mask, seed=None):
+  assert len(dataset) == len(pos_mask)
   if seed is not None: torch.manual_seed(seed)
-  pos_mask = dataset.y  # Only for the tabular data (HAI, WADI, SWaT) do we have y
   neg_mask = 1 - pos_mask
   npos = pos_mask.sum()
   nneg = pos_mask.numel() - npos

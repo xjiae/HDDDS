@@ -140,17 +140,17 @@ def get_mvtec_explanations(model, dataset, configs,
   return stuff
 
 # The stuff for tabular
-def get_tabular_sliding_explanations(model, dataset, configs,
-                                     custom_desc = None,
-                                     misc_data = None,
-                                     num_todo = None,
-                                     post_process_fun = None,
-                                     save_every_k = 20,
-                                     device = "cuda",
-                                     do_save = True,
-                                     saveto = None,
-                                     save_small = True,
-                                     seed = 1234):
+def get_timeseries_explanations(model, dataset, configs,
+                                custom_desc = None,
+                                misc_data = None,
+                                num_todo = None,
+                                post_process_fun = None,
+                                save_every_k = 20,
+                                device = "cuda",
+                                do_save = True,
+                                saveto = None,
+                                save_small = True,
+                                seed = 1234):
   assert isinstance(model, XwModel)
   model.eval().to(device)
   if do_save: assert saveto is not None
@@ -192,85 +192,6 @@ def get_tabular_sliding_explanations(model, dataset, configs,
 
     all_xs.append(x.cpu())
     all_ys.append(y)
-    all_ws.append(w.cpu())
-    all_w_exps.append(w_exp.cpu())
-
-    # Speedhack: save once every few iters, or if we're near the end
-    if do_save and (i % save_every_k == 0 or len(pbar) - i < 2):
-      model_class = model.__class__
-      state_dict = model.state_dict()
-      stuff = {
-          "dataset" : dataset,
-          "model_class" : model_class,
-          "model_state_dict" : None if save_small else state_dict,
-          "method" : configs.desc_str(),
-          "num_total" : len(all_xs),
-          "w_exps" : all_w_exps,
-          "ws" : all_ws,
-          "todo_indices" : todo_indices,
-          "custom_desc" : custom_desc,
-          "misc_data" : misc_data,
-      }
-      torch.save(stuff, saveto)
-
-  return stuff
-
-# The stuff for tabular
-def get_tabular_explanations(model, dataset, configs,
-                             custom_desc = None,
-                             misc_data = None,
-                             num_todo = None,
-                             post_process_fun = None,
-                             save_every_k = 20,
-                             device = "cuda",
-                             do_save = True,
-                             saveto = None,
-                             save_small = True,
-                             seed = 1234):
-  assert isinstance(model, XwModel)
-  if do_save: assert saveto is not None
-  model.eval().to(device)
-
-  if isinstance(configs, GradConfigs):
-    explainer = my_openxai.Explainer(method="grad", model=model)
-  elif isinstance(configs, IntGradConfigs):
-    explainer = my_openxai.Explainer(method="ig", model=model, dataset_tensor=configs.baseline)
-  elif isinstance(configs, LimeConfigs):
-    explainer = my_openxai.Explainer(method="lime", model=model, param_dict_lime=configs.param_dict_lime)
-  elif isinstance(configs, ShapConfigs):
-    explainer = my_openxai.Explainer(method="shap", model=model, param_dict_shap=configs.param_dict_shap)
-  else:
-    raise NotImplementedError()
- 
-  torch.manual_seed(seed)
-  num_todo = len(dataset) if num_todo is None else num_todo
-  perm = torch.randperm(len(dataset))
-  todo_indices = perm[:num_todo]
-  pbar = tqdm(todo_indices)
-
-  all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
-
-  for i in pbar:
-    x, y, w = dataset[i]
-    xx = x.unsqueeze(0).to(device).contiguous()
-    yy = torch.tensor([y]).to(device)
-    w = w.to(device)
-
-
-    if configs.train_mode:
-      model.train().to(device)
-      ww_exp = explainer.get_explanation(xx, yy, configs.train_mode).view(x.shape)
-      model.eval().to(device)
-    else:
-      ww_exp = explainer.get_explanation(xx, yy).view(x.shape)
-    
-    if callable(post_process_fun):
-      w_exp = post_process_fun(ww_exp)
-    else:
-      w_exp = ww_exp.clamp(0,1).view(w.shape).float()
-
-    # all_xs.append(x.cpu())
-    # all_ys.append(y)
     all_ws.append(w.cpu())
     all_w_exps.append(w_exp.cpu())
 
@@ -388,5 +309,6 @@ def get_squad_explanations(model, dataset, configs,
       torch.save(stuff, saveto)
 
   return stuff
+
 
 

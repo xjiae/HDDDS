@@ -725,7 +725,7 @@ relevant information or considerations.
 
 (Usage Note: Duplicate for each known
 correlation.) -->
-All the features are correlated with each other in a given timestamp. Hence, user should treat them as a complete data point when process them.
+All the features are correlated with each other in a given instance. Hence, user should treat them as a complete data point when process them.
 
 
 

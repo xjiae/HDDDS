@@ -15,7 +15,6 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
                  contents = "all",
                  label_choice = "all",
                  overwrite_cache = False):
-        print(f"Entering constructor call at {datetime.now()}")
         ds_name = ds_name.lower()
         assert ds_name in ["hai", "swat", "wadi"]
         assert contents in ["all", "train", "test", "raw"]
@@ -24,7 +23,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         self.data_dir = os.path.join(root, ds_name)
         self.train_file = os.path.join(self.data_dir, "train_processed.csv")
         self.test_file = os.path.join(self.data_dir, "test_processed.csv")
-        self.test_explanation_file = os.path.join(self.data_dir, "test_gt_exp.csv")
+        self.test_explanations_file = os.path.join(self.data_dir, "test_gt_exp.csv")
         self.raw_file = os.path.join(self.data_dir, "raw.csv")
         self.contents = contents
         self.window_size = window_size
@@ -44,115 +43,76 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         else:
             processed_dict = self.make_processed_dict()
 
-        self.num_features = processed_dict["num_features"]
-        self.time_points = processed_dict["time_points"]      # (T,)
-        self.features = processed_dict["features"]            # (T, num_features)
-        self.window_start_indices = processed_dict["window_start_indices"] # (num_windows,)
-        self.window_labels = processed_dict["window_labels"]  # (num_windows,) or (num_windows,window_size)
-        self.num_windows = self.windows.size(0)
+        self.ts = processed_dict["ts"]
+        self.explanations = processed_dict["explanations"]
+        self.y = processed_dict["y"]
+        self.n_idxs = processed_dict["n_idxs"]
+        self.test_idxs = processed_dict["test_idxs"]
+        self.tag_values = processed_dict["tag_values"]
 
 
     def make_processed_dict(self):
-        print(f"About to load df {datetime.now()}")
         if self.contents == "train":
             df =  pd.read_csv(self.train_file, index_col=0)
             explanation = pd.DataFrame(np.zeros((df.shape[0], df.shape[1]-2))) 
         elif self.contents == "test":
             df = pd.read_csv(self.test_file, index_col=0)
-            explanation = pd.read_csv(self.test_explanation_file)
+            explanation = pd.read_csv(self.test_explanations_file)
         elif self.contents == "all":
             train_data = pd.read_csv(self.train_file, index_col=0)
             test_data = pd.read_csv(self.test_file, index_col=0)
             df = pd.concat([train_data, test_data])
             train_exp = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
-            test_exp = pd.read_csv(self.test_explanation_file)
+            test_exp = pd.read_csv(self.test_explanations_file)
             explanation = pd.DataFrame(np.vstack([train_exp.values, test_exp.values]), columns=test_exp.columns)
         elif self.contents == "raw":
             df =  pd.read_csv(self.raw_file, index_col=0)
             train_data = pd.read_csv(self.train_file, index_col=0)
             train_exp = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
-            test_exp = pd.read_csv(self.test_explanation_file)
+            test_exp = pd.read_csv(self.test_explanations_file)
             explanation = pd.DataFrame(np.vstack([train_exp.values, test_exp.values]), columns=test_exp.columns)
         else:
             raise NotImplementedError()
-
-        print(f"Donw loading dict at {datetime.now()}")
         num_features = df.shape[1] - 2
-        time_points = torch.from_numpy(df["epoch"].values).long()
-        print(f"Finished time points at {datetime.now()}")
-        labels = torch.from_numpy(df["label"].values).long()
-        print(f"Finished labels at {datetime.now()}")
-        features = torch.from_numpy(df.drop(columns=["epoch", "label"]).values).float()
-
-        window_start_indices = []
-        window_labels = []
-        print(f"About to run sally's for loop at {datetime.now()}")
-        for L in range(len(time_points) - self.window_size + 1):
+        ts = df['epoch'].values
+        labels = df['label']
+        df_tag = df.drop(columns=['epoch', 'label'])
+        tag_values = np.array(df_tag, dtype=np.float32)
+        test_idxs = []
+        y = []
+        
+        for L in range(len(ts) - self.window_size + 1):
             R = L + self.window_size - 1
-            if (time_points[R] - time_points[L]) == self.window_size - 1:
-                window_start_indices.append(L)
+            if (ts[R]-ts[L]) == self.window_size - 1:
+                test_idxs.append(L)
                 if self.label_choice == "last":
-                    window_labels.append(labels[R])
+                    y.append(labels.values[R])
                 elif self.label_choice == "all":
-                    window_labels.append(labels[L:R+1])
+                    y.append(labels.values[L:R+1])
                 elif self.label_choice == "exist":
-                    window_labels.append(max(labels[L:R+1]))
+                    y.append(max(labels.values[L:R+1]))
                 else:
                     raise NotImplementedError()
-        print(f"Done running for loop at {datetime.now()}")
 
-        window_start_indices = torch.from_numpy(np.array(window_start_indices)[::self.stride]).long()
-        window_labels = torch.from_numpy(np.array(window_labels, dtype=np.int32)[::self.stride]).long()
-
+        y = torch.tensor(np.array(y)).long()
         if self.label_choice == "all":
-            window_labels = window_labels.view(-1, self.window_size)
+          y = y.view(-1, self.window_size)
         else:
-            window_labels = window_labels.view(-1)
+          y = y.view(-1)
+
+        test_idxs = np.array(test_idxs, dtype=np.int32)[::stride]
+        n_idxs = len(test_idxs)
+        print(f"# of {self.contents} windows: {n_idxs}")
 
         return {
-            "num_features" : num_features,
-            "time_points" : time_points,
-            "features" : features,
-            "window_start_indices" : window_start_indices,
-            "window_labels" : window_labels
+            "ts" : ts,
+            "explanations" : explanations,
+            "y" : y,
+            "n_idxs" : n_idxs,
+            "test_idxs" : test_idxs,
+            "tag_values" : tag_values,
         }
 
-
-
-        '''
-        self.num_features = df.shape[1] - 2
-        self.ts = df['epoch'].values
-        self.labels = df['label']
-        self.window_size = window_size
-        df_tag = df.drop(columns=['epoch', 'label'])
-        self.tag_values = np.array(df_tag, dtype=np.float32)
-        self.test_idxs = []
-        self.y = []
-        
-        for L in range(len(self.ts) - self.window_size + 1):
-            R = L + self.window_size - 1
-            if (self.ts[R]-self.ts[L]) == self.window_size - 1:
-                self.test_idxs.append(L)
-                if label_choice == "last":
-                    self.y.append(self.labels.values[R])
-                elif label_choice == "all":
-                    self.y.append(self.labels.values[L:R+1])
-                elif label_choice == "exist":
-                    self.y.append(max(self.labels.values[L:R+1]))
-                else:
-                    raise NotImplementedError()
-
-        self.y = torch.tensor(np.array(self.y)).long()
-        if label_choice == "all":
-          self.y = self.y.view(-1, window_size)
-        else:
-          self.y = self.y.view(-1)
-
-
-        self.test_idxs = np.array(self.test_idxs, dtype=np.int32)[::stride]
-        self.n_idxs = len(self.test_idxs)
-        print(f"# of {self.contents} windows: {self.n_idxs}")
-        '''
          
     def __len__(self):
         return self.n_idxs
@@ -166,34 +126,6 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
     
     def get_ts(self):
         return self.ts
-
-
-def process_dataframe_windows(contents_to_files, window_size, contents, label_choice):
-        if contents == "train":
-            
-            df =  pd.read_csv(train_path, index_col=0)
-            self.explanation = pd.DataFrame(np.zeros((df.shape[0], df.shape[1]-2))) 
-        elif contents == "test":
-            df = pd.read_csv(test_path, index_col=0)
-            self.explanation = pd.read_csv(test_exp_path)
-        elif contents == "all":
-            train_data = pd.read_csv(train_path, index_col=0)
-            test_data = pd.read_csv(test_path, index_col=0)
-            df = pd.concat([train_data, test_data])
-            train_exp = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
-            test_exp = pd.read_csv(test_exp_path)
-            self.explanation = pd.DataFrame(np.vstack([train_exp.values, test_exp.values]), columns=test_exp.columns)
-        elif contents == "raw":
-            df =  pd.read_csv(raw_path, index_col=0)
-            train_data = pd.read_csv(train_path, index_col=0)
-            train_exp = pd.DataFrame(np.zeros((train_data.shape[0], train_data.shape[1]-2)))
-            test_exp = pd.read_csv(test_exp_path)
-            self.explanation = pd.DataFrame(np.vstack([train_exp.values, test_exp.values]), columns=test_exp.columns)
-        else:
-            raise NotImplementedError()
-
-
-
 
 
 def get_timeseries_bundle(ds_name,

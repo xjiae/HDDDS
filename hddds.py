@@ -13,6 +13,6 @@ hai_bundle = get_data_bundle("hai", window_size=100)
 hai_trains = hai_bundle["train_dataset"]
 '''
 
-hai_all = TimeSeriesDataset("hai", 100, label_choice="all")
-# hai_last = TimeSeriesDataset("hai", 100, label_choice="last")
+# hai_all = TimeSeriesDataset("hai", 100, label_choice="all")
+hai_last = TimeSeriesDataset("hai", 100, label_choice="last")
 

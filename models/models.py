@@ -24,9 +24,9 @@ class ShapedModel(nn.Module):
     self.out_dim = math.prod(list(out_shape))
 
 
-class SimpleNet(ShapedModel):
+class MySimpleNet(ShapedModel):
   def __init__(self, in_shape, out_shape, linear_dim=128, softmax_output=True):
-    super(SimpleNet, self).__init__(in_shape, out_shape)
+    super(MySimpleNet, self).__init__(in_shape, out_shape)
     self.linear_dim = linear_dim
     self.softmax_output = softmax_output
     self.norm1 = nn.LayerNorm(self.in_dim)
@@ -64,12 +64,12 @@ class SimpleNet(ShapedModel):
 
 
 # Logistic regression
-class LogisticRegression(ShapedModel):
-   def __init__(self, in_shape):
-    super(LogisticRegression, self).__init__(in_shape, (2,))
+class MyLogisticRegression(ShapedModel):
+  def __init__(self, in_shape):
+    super(MyLogisticRegression, self).__init__(in_shape, (2,))
     self.linear = torch.nn.Linear(self.in_dim, 2)
 
-   def forward(self, x):
+  def forward(self, x):
     z = x.flatten(1).float()
     z = self.linear(z)
     y = torch.softmax(z, dim=1) # 0: good prob, 1: anom prob
@@ -85,22 +85,22 @@ class MyFastResA(ShapedModel):
                conv3x3_only = False,
                freeze_fastflow = False,
                return_mode = "two_class"):
-      super(MyFastResA, self).__init__(in_shape, (2,))
-      self.backbone_name = backbone_name
-      self.ffmodel = FastFlow(backbone_name, flow_steps, in_shape[1], conv3x3_only)
+    super(MyFastResA, self).__init__(in_shape, (2,))
+    self.backbone_name = backbone_name
+    self.ffmodel = FastFlow(backbone_name, flow_steps, in_shape[1], conv3x3_only)
 
-      assert len(in_shape) == 3
-      self.input_channels = in_shape[0]
+    assert len(in_shape) == 3
+    self.input_channels = in_shape[0]
 
-      # Freeze fast flow weights
-      if freeze_fastflow:
-        for param in self.ffmodel.parameters():
-          param.requires_grad = False
+    # Freeze fast flow weights
+    if freeze_fastflow:
+      for param in self.ffmodel.parameters():
+        param.requires_grad = False
 
-      resnet = torchvision.models.resnet18()
-      resnet.conv1 = nn.Conv2d(self.input_channels+1, 64, kernel_size=7, stride=2, padding=3)
-      self.resnet = resnet
-      self.return_mode = return_mode
+    resnet = torchvision.models.resnet18()
+    resnet.conv1 = nn.Conv2d(self.input_channels+1, 64, kernel_size=7, stride=2, padding=3)
+    self.resnet = resnet
+    self.return_mode = return_mode
 
   def forward(self, x):
     N = x.size(0) # N is batch dim
@@ -116,14 +116,14 @@ class MyFastResA(ShapedModel):
     else:
       return ret
 
-    
-# A simple LSTM implementation
-class SimpleLSTM(ShapedModel):
+  
+# A simple LSTM implementation for binary classification
+class MyLSTM(ShapedModel):
   def __init__(self, in_shape,
                hidden_dim = 128,
                auto_reshape = True,
                return_mode = "last"):
-    super(SimpleLSTM, self).__init__(in_shape, (2,))
+    super(MyLSTM, self).__init__(in_shape, (2,))
     self.hidden_dim = hidden_dim
     self.lstm1 = nn.LSTM(input_size=self.in_dim, hidden_size=hidden_dim, batch_first=True)
     self.lstm2 = nn.LSTM(input_size=hidden_dim, hidden_size=hidden_dim, batch_first=True)
@@ -139,13 +139,13 @@ class SimpleLSTM(ShapedModel):
     z, _ = self.lstm1(z)
     z, _ = self.lstm2(z)
     z, _ = self.lstm3(z)
-    z = self.linear(z)    # (N,L,2)
+    z = self.linear(z)  # (N,L,2)
     z = z.softmax(dim=2)
 
     if self.return_mode == "last":
       return z[:,-1]  # (N,2)
     elif self.return_mode == "all":
-      return z        # (N,L,2)
+      return z    # (N,L,2)
     elif self.return_mode == "exists":
       anom_probs = z[:,:,1]  # (N,L)
       max_probs = anom_probs.max(dim=1).values.view(N,1)
@@ -154,9 +154,8 @@ class SimpleLSTM(ShapedModel):
       raise NotImplementedError()
 
 
-'''
 #
-class MySquadModel(XwModel):
+class MySquad(nn.Module):
   def __init__(self,
                name_or_model,
                tokenizer,
@@ -165,7 +164,7 @@ class MySquadModel(XwModel):
                return_mode = "all",
                embeds_dim = 768,
                pretrained_kwargs_dict= {}):
-    super(MySquadModel, self).__init__(in_shape=(-1,), out_shape=(-1,), w_shape=(-1,))
+    super(MySquad, self).__init__()
     if isinstance(name_or_model, str):
       self.model = AutoModelForQuestionAnswering.from_pretrained(name_or_model, **pretrained_kwargs_dict)
     else:
@@ -217,5 +216,4 @@ class MySquadModel(XwModel):
     else:
       raise NotImplementedError()
 
-'''
 

@@ -10,7 +10,7 @@ from transformers import (
     squad_convert_examples_to_features,
 )
 
-from transformers.data.processors.squad import SquadV1Processor
+from transformers.data.processors.squad import SquadV1Processor, SquadV2Processor
 import tensorflow_datasets as tfds
 
 import torch.utils.data as tud
@@ -80,15 +80,24 @@ class SquadDataset(tud.Dataset):
         token_type_ids = item[2]
         start_position = item[3]
         end_position = item[4]
-        return input_ids, attention_mask, token_type_ids, start_position, end_position
-
+        if self.is_train:
+            return input_ids, \
+                   attention_mask, \
+                   token_type_ids, \
+                   start_position, \
+                   end_position
+        else:
+            return input_ids, \
+                   attention_mask, \
+                   token_type_ids
     
     def __len__(self):
         return len(self.dataset)
 
 
 def load_dataset(tokenizer, is_train, max_seq_len, max_query_len, doc_stride):
-    processor = SquadV1Processor()
+    # processor = SquadV1Processor()
+    processor = SquadV2Processor()
     tfds_examples = tfds.load("squad")
     examples = SquadV1Processor().get_examples_from_dataset(tfds_examples, evaluate=not is_train)
     features, dataset = squad_convert_examples_to_features(
@@ -100,53 +109,17 @@ def load_dataset(tokenizer, is_train, max_seq_len, max_query_len, doc_stride):
         is_training = is_train,
         return_dataset = "pt")
 
-    if is_train:
-        return get_balanced_dataset(dataset)
-    else:
-        return dataset
+    return dataset
 
-
-"""
-returns a new dataset, where positive and negative examples are approximately balanced
-"""
-def get_balanced_dataset(dataset):
-    pos_mask = get_dataset_pos_mask(dataset)
-    neg_mask = [~mask for mask in pos_mask]
-    npos, nneg = np.sum(pos_mask), np.sum(neg_mask)
-
-    neg_keep_frac = npos / nneg  # So that in expectation there will be npos negative examples (--> balanced)
-    neg_keep_mask = [mask and np.random.random() < neg_keep_frac for mask in neg_mask]
-
-    # keep all positive examples and subset of negative examples
-    keep_mask = [pos_mask[i] or neg_keep_mask[i] for i in range(len(pos_mask))]
-    keep_indices = [i for i in range(len(keep_mask)) if keep_mask[i]]
-
-    subset_dataset = torch.utils.data.Subset(dataset, keep_indices)
-    return subset_dataset
-
-
-"""
-Returns a list, pos_mask, where pos_mask[i] indicates is True if the ith example in the dataset is positive
-(i.e. it contains some text that should be highlighted) and False otherwise.
-"""
-def get_dataset_pos_mask(dataset):
-    pos_mask = []
-    for i in range(len(dataset)):
-        ex = dataset[i]
-        start_pos = ex[3]
-        end_pos = ex[4]
-        is_positive = end_pos > start_pos
-        pos_mask.append(is_positive)
-    return pos_mask
-
-
+# The squad bundle
 def get_squad_bundle(tokenizer_or_name = "roberta-base",
-                     train_batch_size = 8,
-                     test_batch_size = 8,
+                     train_batch_size = 16,
+                     test_batch_size = 16,
                      shuffle = True,
                      **kwargs):
   trains = SquadDataset(tokenizer_or_name, is_train=True, **kwargs)
   tests = SquadDataset(tokenizer_or_name, is_train=False, **kwargs)
+  tokenizer = trains.tokenizer
 
   trains_perm = torch.randperm(len(trains)) if shuffle else torch.tensor(range(len(trains)))
   tests_perm = torch.randperm(len(tests)) if shuffle else torch.tensor(range(len(tests)))
@@ -158,7 +131,8 @@ def get_squad_bundle(tokenizer_or_name = "roberta-base",
   return { "train_dataset" : trains,
            "test_dataset" : tests,
            "train_dataloader" : train_dataloader,
-           "test_dataloader" : test_dataloader
+           "test_dataloader" : test_dataloader,
+           "tokenizer" : tokenizer,
          }
 
 

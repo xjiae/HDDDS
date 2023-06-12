@@ -46,8 +46,8 @@ class SquadDataset(tud.Dataset):
           self.tokenizer = tokenizer_or_name
           self.tokenizer_name = tokenizer_name
 
-      self.max_seq_len= max_seq_len
-      self.max_query_len= max_query_len
+      self.max_seq_len = max_seq_len
+      self.max_query_len = max_query_len
       self.doc_stride = doc_stride
       self.is_train = is_train
 

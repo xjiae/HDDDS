@@ -92,7 +92,10 @@ def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
 
   # Only run squad in training mode; bail if test because it's too annoying to compute loss :)
   if phase == "test":
-    return
+    return { "model" : model,
+             "avg_loss" : 1.0,
+             "avg_acc" : 0.0
+           }
 
   model.train().to(device)
   num_processed, running_loss = 0, 0.0
@@ -121,6 +124,9 @@ def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
     desc_str = f"[train] processed {num_processed}, loss {avg_loss:.4f}"
     pbar.set_description(desc_str)
 
+  return { "model" : model,
+           "avg_loss" : running_loss / num_processed,
+           "avg_acc" : 0.0 }
 
 # Big train function
 def train(model, dataset_name, configs,
@@ -189,7 +195,7 @@ DEFAULT_WADI_LOADER_KWARGS = { "window_size" : 100, "label_choice" : "last" }
 DEFAULT_SQUAD_LOADER_KWARGS = {}
 
 # Call this method to auto-populate some sample models
-def train_sample_models(dataset_name):
+def train_sample_model(dataset_name):
   dataset_name = dataset_name.lower()
   configs = DEFAULT_CONFIGS
   save_when = "best_acc"

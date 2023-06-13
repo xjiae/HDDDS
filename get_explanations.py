@@ -46,7 +46,7 @@ class LimeConfigs(ExplainerConfigs):
       "kernel_width" : 0.75,
       "std" : float(np.sqrt(0.05)),
       "mode" : "tabular",
-      "sample_around_instance" : False,
+      "sample_around_instance" : True,
       "n_samples" : num_samples,
       "discretize_continuous" : False
     }
@@ -80,7 +80,6 @@ def get_mvtec_explanations(model, dataset, configs,
                            saveto = None,
                            save_small = True,
                            seed = 1234):
-  assert isinstance(model, XwModel)
   model.eval().to(device)
 
   if do_save: assert saveto is not None
@@ -103,8 +102,11 @@ def get_mvtec_explanations(model, dataset, configs,
   pbar = tqdm(todo_indices)
 
   all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
-  for i in pbar:
-    x, y, w = dataset[i]
+  for i, todo_ind in enumerate(pbar):
+    desc_str = f"mvtec {configs.desc_str()}"
+    pbar.set_description(desc_str)
+
+    x, y, w = dataset[todo_ind]
     xx, yy, w = x.unsqueeze(0).to(device), torch.tensor([y]).to(device), w.to(device)
 
     # ww_exp : (3,256,256), need to compress it to (1,256,256)
@@ -137,6 +139,7 @@ def get_mvtec_explanations(model, dataset, configs,
       }
       torch.save(stuff, saveto)
 
+
   return stuff
 
 # The stuff for tabular
@@ -151,7 +154,6 @@ def get_timeseries_explanations(model, dataset, configs,
                                 saveto = None,
                                 save_small = True,
                                 seed = 1234):
-  assert isinstance(model, XwModel)
   model.eval().to(device)
   if do_save: assert saveto is not None
 
@@ -173,10 +175,11 @@ def get_timeseries_explanations(model, dataset, configs,
   pbar = tqdm(todo_indices)
 
   all_xs, all_ys, all_ws, all_w_exps = [], [], [], []
-  for i in pbar:
-    x, y, w, l = dataset[i]
+  for i, todo_ind in enumerate(pbar):
+    desc_str = f"timeseries (in_shape {model.in_shape}) {configs.desc_str()}"
+    pbar.set_description(desc_str)
+    x, y, w = dataset[todo_ind]
     xx, yy, w = x.unsqueeze(0).to(device).contiguous(), torch.tensor([y]).to(device), w.to(device)
-
 
     if configs.train_mode:
       model.train().to(device)
@@ -262,8 +265,8 @@ def get_squad_explanations(model, dataset, configs,
 
   all_ws, all_w_exps = [], []
   pbar = tqdm(range(num_todo))
-  for i in pbar:
-    datai = dataset[i]
+  for i, todo_ind in enumerate(pbar):
+    datai = dataset[todo_ind]
     input_ids = datai[0].to(device)
     attn_mask = datai[1].to(device)
     start_pos = datai[3].to(device)
@@ -271,8 +274,8 @@ def get_squad_explanations(model, dataset, configs,
     inputs_embeds = embed_fn(input_ids)
 
     w = torch.zeros_like(input_ids)
-    for i in range(torch.min(start_pos, end_pos), torch.max(start_pos, end_pos)):
-      w[i] = 1
+    for j in range(torch.min(start_pos, end_pos), torch.max(start_pos, end_pos)):
+      w[j] = 1
 
     ww_aexp = aexplainer.get_explanation(inputs_embeds.unsqueeze(0), start_pos.view(1,1)).squeeze()
     ww_bexp = bexplainer.get_explanation(inputs_embeds.unsqueeze(0), end_pos.view(1,1)).squeeze()
@@ -286,8 +289,8 @@ def get_squad_explanations(model, dataset, configs,
       exp_start = w_aexp.argmax()
       exp_end = w_bexp.argmax()
       w_exp = torch.zeros_like(w)
-      for i in range(torch.min(exp_start, exp_end), torch.max(exp_start, exp_end)):
-        w_exp[i] = 1
+      for j in range(torch.min(exp_start, exp_end), torch.max(exp_start, exp_end)):
+        w_exp[j] = 1
 
     all_ws.append(w.cpu())
     all_w_exps.append(w_exp.cpu())
@@ -310,5 +313,5 @@ def get_squad_explanations(model, dataset, configs,
 
   return stuff
 
-
+#
 

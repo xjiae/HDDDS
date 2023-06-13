@@ -13,7 +13,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
                  stride = 1,
                  root = "data",
                  contents = "all",
-                 label_choice = "all",
+                 label_choice = "last",
                  overwrite_cache = False):
         ds_name = ds_name.lower()
         assert ds_name in ["hai", "swat", "wadi"]
@@ -134,7 +134,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
 
 def get_timeseries_bundle(ds_name,
                           window_size = 100,
-                          label_choice = "all",
+                          label_choice = "last",
                           stride = 1,
                           train_batch_size = 32,
                           test_batch_size = 32,

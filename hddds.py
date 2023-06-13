@@ -5,9 +5,7 @@ import argparse
 import torch
 
 from datasets import *
-from train import *
-from get_explanations import *
-from summary import *
+from experiments import *
 
 torch.manual_seed(1234)
 

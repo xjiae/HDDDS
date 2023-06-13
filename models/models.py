@@ -83,7 +83,7 @@ class MyFastResA(ShapedModel):
                backbone_name = "resnet18",
                flow_steps = 8,
                conv3x3_only = False,
-               freeze_fastflow = False,
+               freeze_fastflow = True,
                return_mode = "two_class"):
     super(MyFastResA, self).__init__(in_shape, (2,))
     self.backbone_name = backbone_name

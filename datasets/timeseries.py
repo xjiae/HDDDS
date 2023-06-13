@@ -36,12 +36,15 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
             os.makedirs(self.cache_dir)
 
         # Get cache file if exists
-        self.cache_file = f"{ds_name}_W{window_size}_C{contents}_L{label_choice}.cache"
+        self.cache_file = os.path.join(self.cache_dir, \
+            f"{ds_name}_W{window_size}_C{contents}_L{label_choice}.cache")
         if os.path.exists(self.cache_file) and not overwrite_cache:
             print(f"loading cache from {self.cache_file}")
             processed_dict = torch.load(self.cache_file)
         else:
             processed_dict = self.make_processed_dict()
+            torch.save(processed_dict, self.cache_file)
+            print(f"cached to {self.cache_file}")
 
         self.ts = processed_dict["ts"]
         self.explanations = processed_dict["explanations"]
@@ -118,8 +121,9 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         return self.n_idxs
 
     def __getitem__(self, idx):
+        idx = idx.item()
         i = self.test_idxs[idx]
-        y = self.y[idx].view(-1)
+        y = self.y[idx]
         x = torch.from_numpy(self.tag_values[i : i + self.window_size])
         w = torch.from_numpy(self.explanations.iloc[i : i + self.window_size].values)
         return x, y, w
@@ -129,7 +133,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
 
 
 def get_timeseries_bundle(ds_name,
-                          window_size=100,
+                          window_size = 100,
                           label_choice = "all",
                           stride = 1,
                           train_batch_size = 32,

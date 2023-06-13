@@ -5,14 +5,17 @@ import torch.nn as nn
 import sys
 from tqdm import tqdm
 
+from transformers import AutoTokenizer
+
 from datasets import *
+from models import *
 
 DEFAULT_MODELS_SAVETO_DIR = "saved_models"
 
 class TrainConfigs:
   def __init__(self,
                lr = 1e-6,
-               num_epochs = 2,
+               num_epochs = 5,
                device_ids = None, # Which GPUs are we using if data parallel
                models_saveto_dir = DEFAULT_MODELS_SAVETO_DIR,
                loaders_kwargs = {}):
@@ -22,19 +25,13 @@ class TrainConfigs:
     self.models_saveto_dir = models_saveto_dir
     self.loaders_kwargs = loaders_kwargs
 
-DEFAULT_CONFIGS = TrainConfigs()
-DEFAULT_MVTEC_LOADER_KWARGS = { "categories" : ["all"] }
-DEFAULT_HAI_LOADER_KWARGS = {}
-DEFAULT_SWAT_LOADER_KWARGS = { "window_size" : 100 }
-DEFAULT_WADI_LOADER_KWARGS = { "window_size" : 100 }
-DEFAULT_SQUAD_LOADER_KWARGS = { "window_size" : 100 }
 
 # Run a single epoch for mvtec
 def run_once_mvtec(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "test"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
   _ = model.train().to(device) if phase == "train" else model.eval().to(device)
-  loss_fn = nn.BCELoss(reduction="sum")
+  loss_fn = nn.CrossEntropyLoss(reduction="sum")
   num_processed, num_corrects = 0, 0
   running_loss, avg_acc = 0.0, 0.0
   pbar = tqdm(dataloader)
@@ -42,16 +39,16 @@ def run_once_mvtec(model, dataloader, optimizer, phase, configs, device="cuda"):
     _ = optimizer.zero_grad() if phase == "train" else None
     x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
-      y_pred = model(x).view(-1)
-      loss = loss_fn(y_pred.double(), y.double())
+      logits = model(x)
+      loss = loss_fn(logits, y)
       if phase == "train":
         loss.backward()
         optimizer.step()
     num_processed += x.size(0)
-    num_corrects += torch.sum(y == (y_pred > 0.5))
+    num_corrects += torch.sum(logits.argmax(dim=1) == y)
     running_loss += loss.item()
     avg_loss, avg_acc = (running_loss / num_processed), (num_corrects / num_processed)
-    desc_str = f"[train]" if phase == "train" else "[test]"
+    desc_str = f"[train]" if phase == "train" else "[test] "
     desc_str += f" processed {num_processed}, loss {avg_loss:.4f}, acc {avg_acc:.4f}"
     pbar.set_description(desc_str)
   return { "model" : model,
@@ -64,22 +61,21 @@ def run_once_timeseries(model, dataloader, optimizer, phase, configs, device="cu
   assert isinstance(configs, TrainConfigs) and phase in ["train", "test"]
   model = nn.DataParallel(model, device_ids=configs.device_ids)
   _ = model.train().to(device) if phase == "train" else model.eval().to(device)
-
-  loss_fn = nn.BCELoss(reduction="sum")
+  loss_fn = nn.CrossEntropyLoss(reduction="sum")
   num_processed, num_corrects = 0, 0
   running_loss, avg_acc = 0.0, 0.0
   pbar = tqdm(dataloader)
-  for it, (x, y, w, l) in enumerate(pbar):
+  for it, (x, y, w) in enumerate(pbar):
     _ = optimizer.zero_grad() if phase == "train" else None
-    x, y, w, l = x.to(device), y.to(device), w.to(device), l.to(device)
+    x, y, w = x.to(device), y.to(device), w.to(device)
     with torch.set_grad_enabled(phase == "train"):
-      y_pred = model(x).view(y.shape) # Assume already outputs in [0,1]
-      loss = loss_fn(y_pred.double(), y.double())
+      logits = model(x)
+      loss = loss_fn(logits, y)
       if phase == "train":
         loss.backward()
         optimizer.step()
     num_processed += x.size(0)
-    num_corrects += torch.sum(y == (y_pred > 0.5))
+    num_corrects += torch.sum(logits.argmax(dim=1) == y)
     running_loss += loss.item()
     avg_loss, avg_acc = (running_loss / num_processed), (num_corrects / num_processed)
     desc_str = f"[train]" if phase == "train" else "[test] "
@@ -93,9 +89,12 @@ def run_once_timeseries(model, dataloader, optimizer, phase, configs, device="cu
 # squad training
 def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
   assert isinstance(configs, TrainConfigs) and phase in ["train", "test"]
-  # model = nn.DataParallel(model, device_ids=configs.device_ids)
-  _ = model.train().to(device) if phase == "train" else model.eval().to(device)
 
+  # Only run squad in training mode; bail if test because it's too annoying to compute loss :)
+  if phase == "test":
+    return
+
+  model.train().to(device)
   num_processed, running_loss = 0, 0.0
   pbar = tqdm(dataloader)
   for it, batch in enumerate(pbar):
@@ -109,51 +108,43 @@ def run_once_squad(model, dataloader, optimizer, phase, configs, device="cuda"):
       "end_positions": batch[4],
     }
 
+    with torch.set_grad_enabled(phase == "train"):
+      outputs = model(**inputs)
+      loss = outputs["loss"]  # This should be supplied by the model
+      loss = loss.sum()
+      loss.backward(retain_graph=True)
+      optimizer.step()
+
+    num_processed += batch[0].size(0)
+    running_loss += loss.item()
+    avg_loss = running_loss / num_processed
+    desc_str = f"[train] processed {num_processed}, loss {avg_loss:.4f}"
+    pbar.set_description(desc_str)
+
 
 # Big train function
-def train(model, dataset_name, configs=DEFAULT_CONFIGS,
+def train(model, dataset_name, configs,
+          run_once_func=None,
           device = "cuda",
           save_when = "best_acc",
           saveto_filename_prefix = None):
   assert save_when in ["best_acc", "best_loss"]
   dataset_name = dataset_name.lower()
 
+  # Get the data
+  data_bundle = get_data_bundle(dataset_name, **configs.loaders_kwargs)
+  train_loader = data_bundle["train_dataloader"]
+  test_loader = data_bundle["test_dataloader"]
+
   if dataset_name == "mvtec":
-    get_loaders_func = get_mvtec_dataloaders
     run_once_func = run_once_mvtec
-    if len(configs.loaders_kwargs) == 0:
-      configs.loaders_kwargs = DEFAULT_MVTEC_LOADER_KWARGS
-
-  elif dataset_name == "hai":
-    get_loaders_func = get_hai_dataloaders
+  elif dataset_name in ["hai", "swat", "wadi"]:
     run_once_func = run_once_timeseries
-    if len(configs.loaders_kwargs) == 0:
-      configs.loaders_kwargs = DEFAULT_HAI_LOADER_KWARGS
-
-  elif dataset_name == "swat":
-    get_loaders_func = get_swat_dataloaders
-    run_once_func = run_once_timeseries
-    if len(configs.loaders_kwargs) == 0:
-      configs.loaders_kwargs = DEFAULT_SWAT_LOADER_KWARGS
-
-  elif dataset_name == "wadi":
-    get_loaders_func = get_wadi_dataloaders
-    run_once_func = run_once_timeseries
-    if len(configs.loaders_kwargs) == 0:
-      configs.loaders_kwargs = DEFAULT_WADI_LOADER_KWARGS
-
   elif dataset_name == "squad":
-    get_loaders_func = get_squad_dataloaders
     run_once_func = run_once_squad
-    if len(configs.loaders_kwargs) == 0:
-      configs.loaders_kwargs = DEFAULT_SQUAD_LOADER_KWARGS
-
   else:
     raise NotImplementedError()
 
-  loaders_dict = get_loaders_func(**configs.loaders_kwargs)
-  train_loader = loaders_dict["train_dataloader"]
-  test_loader = loaders_dict["test_dataloader"]
   optimizer = torch.optim.Adam(model.parameters(), lr=configs.lr)
 
   best_test_loss, best_test_acc = 0.0, 0.0
@@ -189,5 +180,50 @@ def train(model, dataset_name, configs=DEFAULT_CONFIGS,
   torch.cuda.empty_cache()
   return model.cpu()
 
+
+DEFAULT_CONFIGS = TrainConfigs()
+DEFAULT_MVTEC_LOADER_KWARGS = { "categories" : ["all"] }
+DEFAULT_HAI_LOADER_KWARGS = { "window_size" : 100, "label_choice" : "last" }
+DEFAULT_SWAT_LOADER_KWARGS = { "window_size" : 100, "label_choice" : "last" }
+DEFAULT_WADI_LOADER_KWARGS = { "window_size" : 100, "label_choice" : "last" }
+DEFAULT_SQUAD_LOADER_KWARGS = {}
+
+# Call this method to auto-populate some sample models
+def train_sample_models(dataset_name):
+  dataset_name = dataset_name.lower()
+  configs = DEFAULT_CONFIGS
+  save_when = "best_acc"
+
+  if dataset_name == "mvtec":
+    model = MyFastResA()
+    configs.num_epochs = 20
+    configs.loaders_kwargs = DEFAULT_MVTEC_LOADER_KWARGS
+  elif dataset_name == "hai":
+    model = MyLSTM(in_shape=(86,), return_mode="last")
+    configs.num_epochs = 100
+    configs.loaders_kwargs = DEFAULT_HAI_LOADER_KWARGS
+  elif dataset_name == "swat":
+    model = MyLSTM(in_shape=(51,), return_mode="last")
+    configs.num_epochs = 100
+    configs.loaders_kwargs = DEFAULT_SWAT_LOADER_KWARGS
+  elif dataset_name == "wadi":
+    model = MyLSTM(in_shape=(127,), return_mode="last")
+    configs.num_epochs = 100
+    configs.loaders_kwargs = DEFAULT_WADI_LOADER_KWARGS
+  elif dataset_name == "squad":
+    tokenizer = AutoTokenizer.from_pretrained("roberta-base", use_fast=False)
+    model = MySquad("roberta-base", tokenizer)
+    configs.num_epochs = 5
+    configs.loaders_kwargs = DEFAULT_SQUAD_LOADER_KWARGS
+    save_when = "best_loss"
+  else:
+    raise NotImplementedError()
+
+  train(model, dataset_name,
+        configs = configs,
+        save_when = save_when,
+        saveto_filename_prefix = "sample")
+    
+  return model
 
 

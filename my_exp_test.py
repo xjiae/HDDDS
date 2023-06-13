@@ -94,12 +94,13 @@ def run_swat(seeds=[0,1], num_todo=100, model_filename="lr_swat_epoch5.pt"):
     get_timeseries_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed, save_small=True)
 
 
-def run_squad(seeds=[0,1], num_todo=100, model_filename="squad_epoch2.pt"):
+def run_squad(seeds=[0,1], num_todo=100, model_filename="sample_squad_epoch5.pt"):
   tokenizer = AutoTokenizer.from_pretrained("roberta-base", use_fast=False)
   model = MySquadModel("roberta-base", tokenizer, input_mode="inputs_embeds")
   state_dict = torch.load(os.path.join(MODELS_DIR, model_filename))
   model.load_state_dict(state_dict)
-  dataset = SquadDataset("roberta-base", is_train=False)
+  bundle = get_data_bundle("squad")
+  dataset = bundle["train_dataset"]
   for i, seed in enumerate(seeds):
     print(f"squad: using seed number {i+1}/{len(seeds)}")
     grad_saveto = os.path.join(SAVETO_DIR, f"squad_roberta_grad_seed{seed}.pt")

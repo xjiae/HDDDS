@@ -210,9 +210,9 @@ class MySquad(nn.Module):
     if self.return_mode == "all":
       return outputs
     elif self.return_mode == "start_logits":
-      return outputs.start_logits
+      return torch.softmax(outputs.start_logits, dim=1)
     elif self.return_mode == "end_logits":
-      return outputs.end_logits
+      return torch.softmax(outputs.end_logits, dim=1)
     else:
       raise NotImplementedError()
 

@@ -231,7 +231,6 @@ def get_squad_explanations(model, dataset, configs,
                            saveto = None,
                            save_small = True,
                            seed = 1234):
-  assert isinstance(model, MySquadModel)
   if do_save: assert saveto is not None
 
   # Wrap so that it now directly takes inputs_embeds
@@ -266,6 +265,8 @@ def get_squad_explanations(model, dataset, configs,
   all_ws, all_w_exps = [], []
   pbar = tqdm(range(num_todo))
   for i, todo_ind in enumerate(pbar):
+    desc_str = f"squad {configs.desc_str()}"
+    pbar.set_description(desc_str)
     datai = dataset[todo_ind]
     input_ids = datai[0].to(device)
     attn_mask = datai[1].to(device)
@@ -277,8 +278,8 @@ def get_squad_explanations(model, dataset, configs,
     for j in range(torch.min(start_pos, end_pos), torch.max(start_pos, end_pos)):
       w[j] = 1
 
-    ww_aexp = aexplainer.get_explanation(inputs_embeds.unsqueeze(0), start_pos.view(1,1)).squeeze()
-    ww_bexp = bexplainer.get_explanation(inputs_embeds.unsqueeze(0), end_pos.view(1,1)).squeeze()
+    ww_aexp = aexplainer.get_explanation(inputs_embeds.unsqueeze(0), start_pos.view(1,1)).squeeze().to(device)
+    ww_bexp = bexplainer.get_explanation(inputs_embeds.unsqueeze(0), end_pos.view(1,1)).squeeze().to(device)
 
     if callable(post_process_fun):
       w_exp = post_process_fun(ww_aexp, ww_bexp)
@@ -321,7 +322,7 @@ def generate_explanations_sample_mvtec(
         seeds,
         methods_todo = ["grad", "intg", "lime", "shap"],
         num_todo = 100,
-        state_dict_file = os.path.join(DEFAULT_MODELS_DIR, "sample_mvtec_epoch10.pt"),
+        state_dict_file = os.path.join(DEFAULT_MODELS_DIR, "sample_mvtec_epoch20.pt"),
         saveto_dir = DEFAULT_SAVETO_DIR):
   model = MyFastResA()
   if os.path.isfile(state_dict_file):
@@ -406,5 +407,43 @@ def generate_explanations_sample_timeseries(
       get_timeseries_explanations(model, dataset, shap_configs, saveto=shap_saveto, num_todo=num_todo, seed=seed)
 
 
+def generate_explanations_sample_squad(
+        seeds,
+        methods_todo = ["grad", "intg", "lime", "shap"],
+        num_todo = 100,
+        state_dict_file = os.path.join(DEFAULT_MODELS_DIR, "sample_squad_epoch5.pt"),
+        saveto_dir = DEFAULT_SAVETO_DIR):
+
+  bundle = get_data_bundle("squad", tokenizer_or_name="roberta-base")
+  dataset = bundle["train_dataset"]
+  tokenizer = bundle["tokenizer"]
+
+  model = MySquad("roberta-base", tokenizer, input_mode="inputs_embeds")
+  if os.path.isfile(state_dict_file):
+    model.load_state_dict(torch.load(state_dict_file))
+    print(f"Loaded state dict from {state_dict_file}")
+
+  grad_configs = GradConfigs()
+  intg_configs = IntGradConfigs()
+  lime_configs = LimeConfigs(x_train=torch.randn(500,384))
+  shap_configs = ShapConfigs()
+
+  for i, seed in enumerate(seeds):
+    print(f"squad {i+1}/{len(seeds)}: using seed {seed}")
+    if "grad" in methods_todo:
+      grad_saveto = os.path.join(saveto_dir, f"squad_grad_seed{seed}.pt")
+      get_squad_explanations(model, dataset, grad_configs, saveto=grad_saveto, num_todo=num_todo, seed=seed)
+
+    if "intg" in methods_todo:
+      intg_saveto = os.path.join(saveto_dir, f"squad_intg_seed{seed}.pt")
+      get_squad_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed)
+
+    if "lime" in methods_todo:
+      lime_saveto = os.path.join(saveto_dir, f"squad_lime_seed{seed}.pt")
+      get_squad_explanations(model, dataset, lime_configs, saveto=lime_saveto, num_todo=num_todo, seed=seed)
+
+    if "shap" in methods_todo:
+      shap_saveto = os.path.join(saveto_dir, f"squad_shap_seed{seed}.pt")
+      get_squad_explanations(model, dataset, shap_configs, saveto=shap_saveto, num_todo=num_todo, seed=seed)
 
 

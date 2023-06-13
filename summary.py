@@ -1,10 +1,46 @@
-from utils import *
 import torch
 import os
 import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
-PT_FOLDER = "/data1/antonxue/xjiae/anton-files/saved_explanations"
+from sklearn.metrics import f1_score, confusion_matrix
+import numpy as np
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_recall_curve
+
+PT_FOLDER = "saved_explanations"
+
+
+def threshold_array(arr, threshold):
+    # Create a copy of the input array
+    transformed_arr = np.copy(arr)
+    
+    # Set values larger than the threshold to 1, and all others to 0
+    transformed_arr[transformed_arr > threshold] = 1
+    transformed_arr[transformed_arr <= threshold] = 0
+    
+    return transformed_arr
+def summary(y_true, y_pred, score = True):
+    y_true = y_true.astype(int)
+    if score:
+
+        precision, recall, thresholds = precision_recall_curve(y_true, y_pred)
+        recall = recall + 1e-10
+        f1_scores = 2*recall*precision/(recall+precision)
+        # breakpoint()
+        threshold = thresholds[np.argmax(f1_scores)]
+        
+        
+        y_pred = threshold_array(y_pred, threshold)
+    
+    acc = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred, average='weighted')
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    fpr = fp / (fp + tn)
+    fnr = fn / (fn + tp)
+    # print(f"& {fpr:.4f} & {fnr:.4f} & {acc:.4f} & {f1:.4f}     \\\\")
+    return acc, f1, fpr, fnr
+
 
 def evaluate(ret):
   w_true = torch.cat(ret['ws']).numpy().flatten()
@@ -22,16 +58,16 @@ def compute_stat(rets, model_name, ds_name, attr_name, latex=True):
     f1, f1_std = mean_std(rets['f1'])
     if latex:
         saveto = open(f"results/results_{ds_name}.txt", "a")
-        saveto.write(f"{model_name} & {attr_name} & {fpr:.4f} $\pm$ {fpr_std:.4f} & {fnr:.4f} $\pm$ {fnr_std:.4f} & {acc:.4f} $\pm$ {acc_std:.4f} & {f1:.4f} $\pm$ {f1_std:.4f} \\\\\n")
+        saveto.write(f"{model_name} & {attr_name} & {fpr:.2f} $\pm$ {fpr_std:.2f} & {fnr:.2f} $\pm$ {fnr_std:.2f} & {acc:.2f} $\pm$ {acc_std:.2f} & {f1:.2f} $\pm$ {f1_std:.2f} \\\\\n")
         saveto.close()
     else:
         return [fpr, fpr_std, fnr, fnr_std, acc, acc_std, f1, f1_std]
         
     
-def get_table(ds_name, model, attr):
+def get_table(ds_name, attr):
     rets = defaultdict(list)
     for file in os.listdir(PT_FOLDER):
-        if ds_name in file and model in file and attr in file:
+        if ds_name in file and attr in file:
             fp = os.path.join(PT_FOLDER, file)
             if os.path.getsize(fp) > 0:  
                 print(file)
@@ -42,7 +78,7 @@ def get_table(ds_name, model, attr):
                 rets['fnr'].append(fnr)
                 rets['acc'].append(acc)
                 rets['f1'].append(f1)
-    compute_stat(rets, model, ds_name, attr)
+    compute_stat(rets, "model", ds_name, attr)
 
 def compute_overall_avg(ds_name, attr):
     rets = defaultdict(list)
@@ -99,7 +135,7 @@ def all():
 
 
 
-attr_models = ["shap", "lime"]
+attr_models = ["lime","shap"]
 # , "swat", "wadi"
 tabular = ["hai", "swat", "wadi"]
 image = ["mvtec"]
@@ -112,16 +148,16 @@ text_models = ["roberta"]
 def timeseries():
     for ds_name in tqdm(tabular):
         print(ds_name)
-        for model in tabular_models:
-            for attr in attr_models:
-                get_table(ds_name, model, attr)
+        # for model in tabular_models:
+        for attr in attr_models:
+            get_table(ds_name, attr)
 
 def mvtec():
     for ds_name in image:
         for model in image_models:
             for attr in attr_models:
                 print(f"running {attr}...")
-                get_table(ds_name, model, attr)
+                get_table(ds_name, attr)
 
 
 def squad():
@@ -129,7 +165,16 @@ def squad():
         for model in text_models:
             for attr in attr_models:
                 print(f"running {attr}...")
-                get_table(ds_name, model, attr)
+                get_table(ds_name, attr)
+                
+# filenames = os.listdir(PT_FOLDER)
+# for f in filenames:
+#     f = os.path.join(dir, f)
+#     stuff = torch.load(f)
+#     del stuff["dataset"]
+#     stuff["model_class"] = str(stuff["model_class"])
+#     torch.save(stuff, f)
+
 
 timeseries()
 mvtec()

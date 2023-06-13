@@ -100,13 +100,13 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         else:
           y = y.view(-1)
 
-        test_idxs = np.array(test_idxs, dtype=np.int32)[::stride]
+        test_idxs = np.array(test_idxs, dtype=np.int32)[::self.stride]
         n_idxs = len(test_idxs)
         print(f"# of {self.contents} windows: {n_idxs}")
 
         return {
             "ts" : ts,
-            "explanations" : explanations,
+            "explanations" : explanation,
             "y" : y,
             "n_idxs" : n_idxs,
             "test_idxs" : test_idxs,
@@ -121,7 +121,7 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
         i = self.test_idxs[idx]
         y = self.y[idx].view(-1)
         x = torch.from_numpy(self.tag_values[i : i + self.window_size])
-        w = torch.from_numpy(self.explanation.iloc[i : i + self.window_size].values)
+        w = torch.from_numpy(self.explanations.iloc[i : i + self.window_size].values)
         return x, y, w
     
     def get_ts(self):

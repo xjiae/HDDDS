@@ -313,5 +313,98 @@ def get_squad_explanations(model, dataset, configs,
 
   return stuff
 
-#
+
+DEFAULT_MODELS_DIR = "saved_models"
+DEFAULT_SAVETO_DIR = "saved_explanations"
+
+def generate_explanations_sample_mvtec(
+        seeds,
+        methods_todo = ["grad", "intg", "lime", "shap"],
+        num_todo = 100,
+        state_dict_file = os.path.join(DEFAULT_MODELS_DIR, "sample_mvtec_epoch10.pt"),
+        saveto_dir = DEFAULT_SAVETO_DIR):
+  model = MyFastResA()
+  if os.path.isfile(state_dict_file):
+    model.load_state_dict(torch.load(state_dict_file))
+    print(f"Loaded state dict from {state_dict_file}")
+
+  bundle = get_data_bundle("mvtec")
+  dataset = bundle["test_dataset"]
+  grad_configs = GradConfigs()
+  intg_configs = IntGradConfigs()
+  lime_configs = LimeConfigs(x_train=torch.rand(500,3,256,256))
+  shap_configs = ShapConfigs()
+
+  for i, seed in enumerate(seeds):
+    print(f"mvtec {i+1}/{len(seeds)}: using seed {seed}")
+    if "grad" in methods_todo:
+      grad_saveto = os.path.join(saveto_dir, f"mvtec_grad_seed{seed}.pt")
+      get_mvtec_explanations(model, dataset, grad_configs, saveto=grad_saveto, num_todo=num_todo, seed=seed)
+
+    if "intg" in methods_todo:
+      intg_saveto = os.path.join(saveto_dir, f"mvtec_intg_seed{seed}.pt")
+      get_mvtec_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed)
+
+    if "lime" in methods_todo:
+      lime_saveto = os.path.join(saveto_dir, f"mvtec_lime_seed{seed}.pt")
+      get_mvtec_explanations(model, dataset, lime_configs, saveto=lime_saveto, num_todo=num_todo, seed=seed)
+
+    if "shap" in methods_todo:
+      shap_saveto = os.path.join(saveto_dir, f"mvtec_shap_seed{seed}.pt")
+      get_mvtec_explanations(model, dataset, shap_configs, saveto=shap_saveto, num_todo=num_todo, seed=seed)
+
+
+def generate_explanations_sample_timeseries(
+        dataset_name,
+        seeds,
+        methods_todo = ["grad", "intg", "lime", "shap"],
+        num_todo = 100,
+        models_dir = DEFAULT_MODELS_DIR,
+        saveto_dir = DEFAULT_SAVETO_DIR):
+  dataset_name = dataset_name.lower()
+  if dataset_name == "swat":
+    model = MyLSTM(in_shape=(51,), return_mode="last")
+    state_dict_file = os.path.join(models_dir, "sample_swat_epoch100.pt")
+    lime_configs = LimeConfigs(x_train=torch.randn(50,100,51))
+  elif dataset_name == "hai":
+    model = MyLSTM(in_shape=(86,), return_mode="last")
+    state_dict_file = os.path.join(models_dir, "sample_hai_epoch100.pt")
+    lime_configs = LimeConfigs(x_train=torch.randn(50,100,86))
+  elif dataset_name == "wadi":
+    model = MyLSTM(in_shape=(127,), return_mode="last")
+    state_dict_file = os.path.join(models_dir, "sample_wadi_epoch100.pt")
+    lime_configs = LimeConfigs(x_train=torch.randn(50,100,127))
+  else:
+    raise NotImplementedError()
+
+  if os.path.isfile(state_dict_file):
+    model.load_state_dict(torch.load(state_dict_file))
+    print(f"Loaded state dict from {state_dict_file}")
+  
+  bundle = get_data_bundle(dataset_name)
+  dataset = bundle["train_dataset"]
+  grad_configs = GradConfigs(train_mode=True)
+  intg_configs = IntGradConfigs(train_mode=True)
+  shap_configs = ShapConfigs()
+
+  for i, seed in enumerate(seeds):
+    print(f"{dataset_name} {i+1}/{len(seeds)}: using seed {seed}")
+    if "grad" in methods_todo:
+      grad_saveto = os.path.join(saveto_dir, f"{dataset_name}_grad_seed{seed}.pt")
+      get_timeseries_explanations(model, dataset, grad_configs, saveto=grad_saveto, num_todo=num_todo, seed=seed)
+
+    if "intg" in methods_todo:
+      intg_saveto = os.path.join(saveto_dir, f"{dataset_name}_intg_seed{seed}.pt")
+      get_timeseries_explanations(model, dataset, intg_configs, saveto=intg_saveto, num_todo=num_todo, seed=seed)
+
+    if "lime" in methods_todo:
+      lime_saveto = os.path.join(saveto_dir, f"{dataset_name}_lime_seed{seed}.pt")
+      get_timeseries_explanations(model, dataset, lime_configs, saveto=lime_saveto, num_todo=num_todo, seed=seed)
+
+    if "shap" in methods_todo:
+      shap_saveto = os.path.join(saveto_dir, f"{dataset_name}_shap_seed{seed}.pt")
+      get_timeseries_explanations(model, dataset, shap_configs, saveto=shap_saveto, num_todo=num_todo, seed=seed)
+
+
+
 

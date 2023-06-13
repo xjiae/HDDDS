@@ -85,7 +85,6 @@ def Explainer(method: str,
           y = torch.cat(y, dim=0)
           return y.detach().cpu().numpy()
 
-        # explainer = LIME(lambda w_np: model(torch.tensor(np.float32(w_np)).to(next(model.parameters()).device)),
         explainer = LIME(predict_fn,
                          param_dict_lime['dataset_tensor'],
                          std=param_dict_lime['std'],

@@ -219,7 +219,7 @@ def train_sample_model(dataset_name):
   elif dataset_name == "squad":
     tokenizer = AutoTokenizer.from_pretrained("roberta-base", use_fast=False)
     model = MySquad("roberta-base", tokenizer)
-    configs.num_epochs = 5
+    configs.num_epochs = 10
     configs.loaders_kwargs = DEFAULT_SQUAD_LOADER_KWARGS
     save_when = "best_loss"
   else:

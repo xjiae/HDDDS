@@ -131,7 +131,12 @@ made available.
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-In our maintenance plan, our primary focus will be on preserving and leveraging the existing data that we have collected. This involves ensuring the integrity and security of the data through regular backups, implementing robust data storage practices, and conducting periodic audits to identify any potential issues or anomalies. Additionally, we recognize the growing importance of graph datasets in various domains. To capitalize on this, we will actively explore and evaluate potential graph datasets that align with our needs and objectives. This includes seeking out reliable sources, assessing the quality and relevance of the data, and integrating suitable graph datasets into our existing infrastructure. By incorporating graph datasets, we aim to enhance the depth and breadth of our analysis, uncover hidden patterns and relationships, and gain valuable insights that can drive informed decision-making and optimize our operations. Our maintenance plan thus combines the preservation of existing data with the exploration of new graph datasets, ensuring a comprehensive and forward-looking approach to data management and utilization.
+In our maintenance plan, our primary focus will be on preserving and leveraging the existing data that we have collected. This involves ensuring the integrity and security of the data through regular backups, implementing robust data storage practices, and conducting periodic audits to identify any potential issues or anomalies. Additionally, we recognize the growing importance of graph datasets in various domains. To capitalize on this, we will actively explore and evaluate potential graph datasets that align with our needs and objectives. This includes seeking out reliable sources, assessing the quality and relevance of the data, and integrating suitable graph datasets into our existing infrastructure. By incorporating graph datasets, we aim to enhance the depth and breadth of our analysis, uncover hidden patterns and relationships, and gain valuable insights that can drive informed decision-making and optimize our operations. In addition, we are aware that the SQuAD dataset does not have a clear classification task and may not align well with the remaining dataset. We are also exploring the Contract Understanding Atticus Dataset [(CUAD)](https://www.atticusprojectai.org/cuad) to see if we can algin the document classification task with the ground truth explanation they provide.
+
+Our maintenance plan thus
+combines the preservation of existing data with the exploration of new
+graph and text datasets, ensuring a comprehensive and forward-looking approach to
+data management and utilization.
 
 **Versioning:** The dataset is versioned based on several criteria. This includes significant updates or changes in the data collection process, methodology, or data sources. Corrections or improvements to enhance data accuracy or reliability also warrant a new version. Substantial additions or expansions, such as new data points or variables, are considered for versioning. User feedback and requests for specific modifications are also taken into account. The versioning process ensures transparency, traceability, and reproducibility, keeping the dataset relevant and adaptable to evolving needs.
 
@@ -160,7 +165,7 @@ on the next update.
 
 Use additional notes to capture any other relevant information or
 considerations. -->
-**Updates to Data:** Next version of the dataset will possibly include suitable graph dataset.
+**Updates to Data:** Next version of the dataset will possibly include suitable graph dataset.  We are currently investigating at the CUAD dataset.
 
 
 ## Example of Data Points
@@ -174,7 +179,7 @@ considerations. -->
 #### Sampling of Data Points
 <!-- scope: periscope -->
 <!-- info: Provide link(s) to data points or exploratory demos: -->
-- [Demo Link](/HDDDS/example.ipynb)
+- [Demo Link](https://github.com/xjiae/HDDDS/blob/main/example.ipynb)
 
 #### Data Fields
 <!-- scope: microscope -->

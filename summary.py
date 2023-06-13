@@ -99,7 +99,7 @@ def all():
 
 
 
-attr_models = ["grad", "intg"]
+attr_models = ["shap", "lime"]
 # , "swat", "wadi"
 tabular = ["hai", "swat", "wadi"]
 image = ["mvtec"]
@@ -109,7 +109,7 @@ tabular_models = ['lstm', 'lr']
 image_models = ["ffres"]
 text_models = ["roberta"]
 
-def hai():
+def timeseries():
     for ds_name in tqdm(tabular):
         print(ds_name)
         for model in tabular_models:
@@ -131,4 +131,6 @@ def squad():
                 print(f"running {attr}...")
                 get_table(ds_name, model, attr)
 
-all()
+timeseries()
+mvtec()
+squad()

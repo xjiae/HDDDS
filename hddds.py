@@ -2,9 +2,13 @@ import os
 import sys
 import argparse
 
+import torch
+
 from datasets import *
 from train import *
 from get_explanations import *
+
+torch.manual_seed(1234)
 
 # It is recommended that you just call these
 def train_all_sample_models():

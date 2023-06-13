@@ -126,8 +126,7 @@ def get_mvtec_explanations(model, dataset, configs,
       model_class = model.__class__
       state_dict = model.state_dict()
       stuff = {
-          "dataset" : dataset,
-          "model_class" : model_class,
+          "model_class" : str(model_class),
           "model_state_dict" : None if save_small else state_dict,
           "method" : configs.desc_str(),
           "num_total" : len(all_xs),

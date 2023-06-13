@@ -7,4 +7,4 @@
 -  `get_explanations.py`: generating the explanations using different feature atrribution methods;
 -  `summary.py`: evaluating the performance of the explanations against ground truth.
 
-PS: if you ever wonder what does `hddds` stands for, it is pinyin for `很大的dataset` (very large dataset).
+PS: If you ever wonder why are there so many 'd's in `hddds`, it is pinyin for `很大的dataset` (very large dataset) :)

@@ -167,15 +167,5 @@ def squad():
                 print(f"running {attr}...")
                 get_table(ds_name, attr)
                 
-# filenames = os.listdir(PT_FOLDER)
-# for f in filenames:
-#     f = os.path.join(dir, f)
-#     stuff = torch.load(f)
-#     del stuff["dataset"]
-#     stuff["model_class"] = str(stuff["model_class"])
-#     torch.save(stuff, f)
 
 
-timeseries()
-mvtec()
-squad()

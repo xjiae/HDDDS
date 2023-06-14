@@ -427,9 +427,9 @@ source.) -->
 
 **Included Fields**
 
-Data fields of each datasets were collected and are included in the dataset. Each of them has high dimension (>50), we found the detailed description for HAI and SWaT and consolidate them to the tables below. For WADI, we did not find any detailed description. It is an extension of SWaT hence they share similar features. We attach the testbed information [here](https://itrust.sutd.edu.sg/itrust-labs-home/itrust-labs_wadi/).
+Data fields of each datasets were collected and are included in the dataset. We found the detailed description for HAI and SWaT and consolidate them to the tables below. For WADI, we did not find any detailed description. It is an extension of SWaT hence they share similar features. We attach the testbed information [here](https://itrust.sutd.edu.sg/itrust-labs-home/itrust-labs_wadi/).
 
-HAI Features:
+HAI 86 Features:
 | Feature      | Min Value | Max Value | Unit    | Description                                                         |
 | ------------ | --------- | --------- | ------- | ------------------------------------------------------------------- |
 | P1_B2004     | 0         | 10        | bar     | Heat-exchanger outlet pressure setpoint                             |
@@ -519,7 +519,7 @@ HAI Features:
 | P4_ST_PT01   | 0         | 27648     | \-      | Digital value of steam pressure of STM                              |
 | P4_ST_TT01   | 0         | 27648     | \-      | Digital value of steam temperature of STM                           |
 
-SWaT Features:
+SWaT 51 Features:
 | Feature        | Type     | Description                                                                                |
 | -------------- | -------- | ------------------------------------------------------------------------------------------ |
 | FIT-101        | Sensor   | Flow meter; Measures inflow into raw water tank.                                           |

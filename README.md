@@ -7,4 +7,4 @@
 -  `experiments/get_explanations.py`: generating the explanations using different feature atrribution methods;
 -  `experiments/summary.py`: evaluating the performance of the explanations against ground truth.
 
-PS: If you ever wonder why there are so many 'd's in `hddds`, it is pinyin for `Hen Da De DataSet` (very large dataset) :)
+PS: If you ever wonder why there are so many 'd's in `hddds`, it is pinyin for `Hao Da De DataSet` (very large dataset) :)

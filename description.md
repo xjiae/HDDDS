@@ -452,9 +452,8 @@ source.) -->
 Data fields of each datasets were collected and are included in the dataset. Each of them has high dimension (>50), we found the detailed description for HAI and SWaT and consolidate them to the tables below. For WADI we did not find any detailed description. It is an extension of SWaT, and we attach the testbed information [here](https://itrust.sutd.edu.sg/itrust-labs-home/itrust-labs_wadi/).
 
 HAI Features:
-| Name         | Range  | Unit   | Description |
+| Name         | Min Value|Max Value| Unit   | Description |
 | ------------ | ------ | ------ | ----------- |
-| Min          | Max    |
 | P1_B2004     | 0      | 10     | bar         | Heat-exchanger outlet pressure setpoint |
 | P1_B2016     | 0      | 10     | bar         | Pressure demand for thermal power output control |
 | P1_B3004     | 0      | 720    | mm          | Water level setpoint (return water tank) |

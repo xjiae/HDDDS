@@ -208,19 +208,19 @@ considerations.** -->
 This is a typical data point:
 
 ```
-{'x': tensor([[0.6273, 0.2893, 0.2775,  ..., 0.4198, 0.3439, 0.5313],
+{tensor([[0.6273, 0.2893, 0.2775,  ..., 0.4198, 0.3439, 0.5313],
         [0.6273, 0.2985, 0.2775,  ..., 0.4198, 0.3401, 0.5330],
         [0.6273, 0.3055, 0.2775,  ..., 0.4198, 0.3439, 0.5292],
         ...,
         [0.6273, 0.3265, 0.2775,  ..., 0.4198, 0.3467, 0.4995],
         [0.6273, 0.3341, 0.2775,  ..., 0.4198, 0.3467, 0.5019],
         [0.6273, 0.3444, 0.2775,  ..., 0.4198, 0.3467, 0.5022]]),
-  'y': tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0])
-  'a': tensor([[0., 0., 0.,  ..., 0., 0., 0.],
+        0, 0, 0, 0]),
+  tensor([[0., 0., 0.,  ..., 0., 0., 0.],
         [0., 0., 0.,  ..., 0., 0., 0.],
         [0., 0., 0.,  ..., 0., 0., 0.],
         ...,
@@ -231,28 +231,6 @@ This is a typical data point:
 
 <!-- **Additional Notes:** Add here -->
 
-#### Atypical Data Point
-<!-- width: half -->
-<!-- info: Provide an example of an outlier data point and describe what makes
-it atypical.
-
-**Use additional notes to capture any other relevant information or
-considerations.** -->
-This is an example for SQuAD dataset:
-
-```
-{'q_id': '8houtx',
-  'title': 'Why does water heated to room temperature feel colder than the air around it?',
-  'selftext': '',
-  'document': '',
-  'subreddit': 'explainlikeimfive',
-  'answers': {'a_id': ['dylcnfk', 'dylcj49'],
-  'text': ["Water transfers heat more efficiently than air. When something feels cold it's because heat is being transferred from your skin to whatever you're touching. ... Get out of the water and have a breeze blow on you while you're wet, all of the water starts evaporating, pulling even more heat from you."],
-  'score': [5, 2]},
-  'title_urls': {'url': []},
-  'selftext_urls': {'url': []},
-  'answers_urls': {'url': []}}
-```
 
 ## Motivations & Intentions
 ### Motivations
@@ -452,6 +430,7 @@ source.) -->
 Data fields of each datasets were collected and are included in the dataset. Each of them has high dimension (>50), we found the detailed description for HAI and SWaT and consolidate them to the tables below. For WADI, we did not find any detailed description. It is an extension of SWaT hence they share similar features. We attach the testbed information [here](https://itrust.sutd.edu.sg/itrust-labs-home/itrust-labs_wadi/).
 
 HAI Features:
+<<<<<<< HEAD
 | Feature      | Min Value | Max Value | Unit    | Description                                                         |
 | ------------ | --------- | --------- | ------- | ------------------------------------------------------------------- |
 | P1_B2004     | 0         | 10        | bar     | Heat-exchanger outlet pressure setpoint                             |
@@ -542,6 +521,98 @@ HAI Features:
 | P4_ST_TT01   | 0         | 27648     | \-      | Digital value of steam temperature of STM                           |
 
 SWaT Features:
+=======
+| Name         | Min Value | Max Value |  Unit   | Description |
+| ------------ | ------ | ------ | ----------- |
+| P1_B2004     | 0      | 10     | bar         | Heat-exchanger outlet pressure setpoint |
+| P1_B2016     | 0      | 10     | bar         | Pressure demand for thermal power output control |
+| P1_B3004     | 0      | 720    | mm          | Water level setpoint (return water tank) |
+| P1_B3005     | 0      | 2500   | l/h         | Discharge flowrate setpoint (return water tank) |
+| P1_B4002     | 0      | 100    | ℃           | Heat-exchanger outlet temperature setpoint |
+| P1_B4005     | 0      | 100    | %           | Temperature PID control output |
+| P1_B400B     | 0      | 2500   | l/h         | Water outflow rate setpoint (heating water tank) |
+| P1_B4022     | 0      | 40     | ℃           | Temperature demand for thermal power output control |
+| P1_FCV01D    | 0      | 100    | %           | Position command for the FCV01 valve |
+| P1_FCV01Z    | 0      | 100    | %           | Current position of the FCV01 valve |
+| P1_FCV02D    | 0      | 100    | %           | Position command for the FCV02 valve |
+| P1_FCV02Z    | 0      | 100    | %           | Current position of the FCV02 valve |
+| P1_FCV03D    | 0      | 100    | %           | Position command for the FCV03 valve |
+| P1_FCV03Z    | 0      | 100    | %           | Current position of the FCV03 valve |
+| P1_FT01      | 0      | 2500   | mmH2O       | Measured flowrate of the return water tank |
+| P1_FT01Z     | 0      | 3190   | l/h         | Water inflow rate converted from P1_FT01 |
+| P1_FT02      | 0      | 2500   | mmH2O       | Measured flowrate of heating water tank |
+| P1_FT02Z     | 0      | 3190   | l/h         | Water outflow rate conversion from P1_FT02 |
+| P1_FT03      | 0      | 2500   | mmH2O       | Measured flowrate of the return water tank |
+| P1_FT03Z     | 0      | 3190   | l/h         | Water outflow rate converted from P1_FT03 |
+| P1_LCV01D    | 0      | 100    | %           | Position command for the LCV01 valve |
+| P1_LCV01Z    | 0      | 100    | %           | Current position of the LCV01 valve |
+| P1_LIT01     | 0      | 720    | mm          | Water level of the return water tank |
+| P1_PCV01D    | 0      | 100    | %           | Position command for the PCV01 valve |
+| P1_PCV01Z    | 0      | 100    | %           | Current position of the PCV01 valve |
+| P1_PCV02D    | 0      | 100    | %           | Position command for the PCV2 valve |
+| P1_PCV02Z    | 0      | 100    | %           | Current position of the PCV02 valve |
+| P1_PIT01     | 0      | 10     | bar         | Heat-exchanger outlet pressure |
+| P1_PIT01_HH  | 0      | 10     | bar         | Highest outlet pressure of the heat-exchanger |
+| P1_PIT02     | 0      | 10     | bar         | Water supply pressure of the heating water pump |
+| P1_PP01AD    | 0      | 1      | Boolean     | Start command of the main water pump PP01A |
+| P1_PP01AR    | 0      | 1      | Boolean     | Running state of the main water pump PP01A |
+| P1_PP01BD    | 0      | 1      | Boolean     | Start command of the main water pump PP01B |
+| P1_PP01BR    | 0      | 1      | Boolean     | Running state of the main water pump PP01B |
+| P1_PP02D     | 0      | 1      | Boolean     | Start command of the heating water pump PP02 |
+| P1_PP02R     | 0      | 1      | Boolean     | Running state of the heating water pump PP02 |
+| P1_PP04      | 0      | 100    | %           | Control out of the cooler pump |
+| P1_PP04SP    | 0      | 100    | ℃           | Cooler temperature setpoint |
+| P1_SOL01D    | 0      | 1      | Boolean     | Open command of the main water tank supply valve |
+| P1_SOL03D    | 0      | 1      | Boolean     | Open command of the main water tank drain valve |
+| P1_STSP      | 0      | 1      | Boolean     | Start/stop command of the boiler DCS |
+| P1_TIT01     | \-50   | 150    | ℃           | Heat-exchanger outlet temperature |
+| P1_TIT02     | \-50   | 150    | ℃           | Temperature of the heating water tank |
+| P1_TIT03     | \-50   | 150    | ℃           | Temperature of the main water tank |
+| P2_24Vdc     | 0      | 30     | Voltage     | DCS 24V Input Voltage |
+| P2_ATSW_Lamp | 0      | 1      | Boolean     | Lamp of the Auto SW |
+| P2_AutoGo    | 0      | 1      | Boolean     | Auto start button |
+| P2_AutoSD    | 0      | 3200   | RPM         | Auto speed demand |
+| P2_Emerg     | 0      | 1      | Boolean     | Emergency button |
+| P2_MASW      | 0      | 1      | Boolean     | Manual(1)/Auto(0) SW |
+| P2_MASW_Lamp | 0      | 1      | Boolean     | Lamp of Manual SW |
+| P2_ManualGO  | 0      | 1      | Boolean     | Manual start button |
+| P2_ManualSD  | 0      | 3200   | RPM         | Manual speed demand |
+| P2_OnOff     | 0      | 1      | Boolean     | On/off switch of the turbine DCS |
+| P2_RTR       | 0      | 2880   | RPM         | RPM trip rate |
+| P2_SCO       | 0      | 100000 | \-          | Control output value of the speed controller |
+| P2_SCST      | \-100  | 100    | RPM         | Speed change proportional to frequency change of the STM |
+| P2_SIT01     | 0      | 3200   | RPM         | Current turbine RPM measured by speed probe |
+| P2_TripEx    | 0      | 1      | Boolean     | Trip emergency exit button |
+| P2_VIBTR01   | \-10   | 10     | ㎛           | Shaft-vibration-related Y-axis displacement near the 1st mass wheel |
+| P2_VIBTR02   | \-10   | 10     | ㎛           | Shaft-vibration-related X-axis displacement near the 1st mass wheel |
+| P2_VIBTR03   | \-10   | 10     | ㎛           | Shaft-vibration-related Y-axis displacement near the 2nd mass wheel |
+| P2_VIBTR04   | \-10   | 10     | ㎛           | Shaft-vibration-related X-axis displacement near the 2nd mass wheel |
+| P2_VT01      | 11     | 12     | rad/s       | Phase lag signal of the key phasor probe |
+| P2_VTR01     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR01 |
+| P2_VTR02     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR02 |
+| P2_VTR03     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR03 |
+| P2_VTR04     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR03 |
+| P3_FIT01     | 0      | 27648  | \-          | Flow rate of water flowing into the upper water tank |
+| P3_LCP01D    | 0      | 27648  | \-          | Speed command for the pump LCP01 |
+| P3_LCV01D    | 0      | 27648  | \-          | Position command for the valve LCV01 |
+| P3_LH01      | 0      | 70     | %           | High water level set-point |
+| P3_LIT01     | 0      | 90     | %           | Water level of the upper water tank |
+| P3_LL01      | 0      | 70     | %           | Low water level set-point |
+| P3_PIT01     | 0      | 27648  | \-          | Pressure of water flowing into the upper water tank |
+| P4_HT_FD     | \-0.02 | 0.02   | mHz         | Frequency deviation of HTM |
+| P4_HT_PO     | 0      | 100    | MW          | Output power of HTM |
+| P4_HT_PS     | 0      | 100    | MW          | Scheduled power demand of HTM |
+| P4_LD        | 0      | 500    | MW          | Total electrical load demand |
+| P4_ST_FD     | \-0.02 | 0.02   | Hz          | Frequency deviation of STM |
+| P4_ST_GOV    | 0      | 27648  | \-          | Gate opening rate of STM |
+| P4_ST_LD     | 0      | 500    | MW          | Electrical load demand of STM |
+| P4_ST_PO     | 0      | 500    | MW          | Output power of STM |
+| P4_ST_PS     | 0      | 500    | MW          | Scheduled power demand of STM |
+| P4_ST_PT01   | 0      | 27648  | \-          | Digital value of steam pressure of STM |
+| P4_ST_TT01   | 0      | 27648  | \-          | Digital value of steam temperature of STM |
+
+For SWaT:
+>>>>>>> 5b9787ef3d2950382110476968734fc195ad0454
 | Feature        | Type     | Description                                                                                |
 | -------------- | -------- | ------------------------------------------------------------------------------------------ |
 | FIT-101        | Sensor   | Flow meter; Measures inflow into raw water tank.                                           |

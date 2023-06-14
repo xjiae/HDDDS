@@ -449,7 +449,153 @@ source.) -->
 
 **Included Fields**
 
-Data fields of each datasets were collected and are included in the dataset. Each of them has high dimension (>50) which is not displayed here. Please refer to individual source for the detailed features.
+Data fields of each datasets were collected and are included in the dataset. Each of them has high dimension (>50), we found the detailed description for HAI and SWaT and consolidate them to the tables below. For WADI we did not find any detailed description. It is an extension of SWaT, and we attach the testbed information [here](https://itrust.sutd.edu.sg/itrust-labs-home/itrust-labs_wadi/).
+
+HAI Features:
+| Name         | Range  | Unit   | Description |
+| ------------ | ------ | ------ | ----------- |
+| Min          | Max    |
+| P1_B2004     | 0      | 10     | bar         | Heat-exchanger outlet pressure setpoint |
+| P1_B2016     | 0      | 10     | bar         | Pressure demand for thermal power output control |
+| P1_B3004     | 0      | 720    | mm          | Water level setpoint (return water tank) |
+| P1_B3005     | 0      | 2500   | l/h         | Discharge flowrate setpoint (return water tank) |
+| P1_B4002     | 0      | 100    | ℃           | Heat-exchanger outlet temperature setpoint |
+| P1_B4005     | 0      | 100    | %           | Temperature PID control output |
+| P1_B400B     | 0      | 2500   | l/h         | Water outflow rate setpoint (heating water tank) |
+| P1_B4022     | 0      | 40     | ℃           | Temperature demand for thermal power output control |
+| P1_FCV01D    | 0      | 100    | %           | Position command for the FCV01 valve |
+| P1_FCV01Z    | 0      | 100    | %           | Current position of the FCV01 valve |
+| P1_FCV02D    | 0      | 100    | %           | Position command for the FCV02 valve |
+| P1_FCV02Z    | 0      | 100    | %           | Current position of the FCV02 valve |
+| P1_FCV03D    | 0      | 100    | %           | Position command for the FCV03 valve |
+| P1_FCV03Z    | 0      | 100    | %           | Current position of the FCV03 valve |
+| P1_FT01      | 0      | 2500   | mmH2O       | Measured flowrate of the return water tank |
+| P1_FT01Z     | 0      | 3190   | l/h         | Water inflow rate converted from P1_FT01 |
+| P1_FT02      | 0      | 2500   | mmH2O       | Measured flowrate of heating water tank |
+| P1_FT02Z     | 0      | 3190   | l/h         | Water outflow rate conversion from P1_FT02 |
+| P1_FT03      | 0      | 2500   | mmH2O       | Measured flowrate of the return water tank |
+| P1_FT03Z     | 0      | 3190   | l/h         | Water outflow rate converted from P1_FT03 |
+| P1_LCV01D    | 0      | 100    | %           | Position command for the LCV01 valve |
+| P1_LCV01Z    | 0      | 100    | %           | Current position of the LCV01 valve |
+| P1_LIT01     | 0      | 720    | mm          | Water level of the return water tank |
+| P1_PCV01D    | 0      | 100    | %           | Position command for the PCV01 valve |
+| P1_PCV01Z    | 0      | 100    | %           | Current position of the PCV01 valve |
+| P1_PCV02D    | 0      | 100    | %           | Position command for the PCV2 valve |
+| P1_PCV02Z    | 0      | 100    | %           | Current position of the PCV02 valve |
+| P1_PIT01     | 0      | 10     | bar         | Heat-exchanger outlet pressure |
+| P1_PIT01_HH  | 0      | 10     | bar         | Highest outlet pressure of the heat-exchanger |
+| P1_PIT02     | 0      | 10     | bar         | Water supply pressure of the heating water pump |
+| P1_PP01AD    | 0      | 1      | Boolean     | Start command of the main water pump PP01A |
+| P1_PP01AR    | 0      | 1      | Boolean     | Running state of the main water pump PP01A |
+| P1_PP01BD    | 0      | 1      | Boolean     | Start command of the main water pump PP01B |
+| P1_PP01BR    | 0      | 1      | Boolean     | Running state of the main water pump PP01B |
+| P1_PP02D     | 0      | 1      | Boolean     | Start command of the heating water pump PP02 |
+| P1_PP02R     | 0      | 1      | Boolean     | Running state of the heating water pump PP02 |
+| P1_PP04      | 0      | 100    | %           | Control out of the cooler pump |
+| P1_PP04SP    | 0      | 100    | ℃           | Cooler temperature setpoint |
+| P1_SOL01D    | 0      | 1      | Boolean     | Open command of the main water tank supply valve |
+| P1_SOL03D    | 0      | 1      | Boolean     | Open command of the main water tank drain valve |
+| P1_STSP      | 0      | 1      | Boolean     | Start/stop command of the boiler DCS |
+| P1_TIT01     | \-50   | 150    | ℃           | Heat-exchanger outlet temperature |
+| P1_TIT02     | \-50   | 150    | ℃           | Temperature of the heating water tank |
+| P1_TIT03     | \-50   | 150    | ℃           | Temperature of the main water tank |
+| P2_24Vdc     | 0      | 30     | Voltage     | DCS 24V Input Voltage |
+| P2_ATSW_Lamp | 0      | 1      | Boolean     | Lamp of the Auto SW |
+| P2_AutoGo    | 0      | 1      | Boolean     | Auto start button |
+| P2_AutoSD    | 0      | 3200   | RPM         | Auto speed demand |
+| P2_Emerg     | 0      | 1      | Boolean     | Emergency button |
+| P2_MASW      | 0      | 1      | Boolean     | Manual(1)/Auto(0) SW |
+| P2_MASW_Lamp | 0      | 1      | Boolean     | Lamp of Manual SW |
+| P2_ManualGO  | 0      | 1      | Boolean     | Manual start button |
+| P2_ManualSD  | 0      | 3200   | RPM         | Manual speed demand |
+| P2_OnOff     | 0      | 1      | Boolean     | On/off switch of the turbine DCS |
+| P2_RTR       | 0      | 2880   | RPM         | RPM trip rate |
+| P2_SCO       | 0      | 100000 | \-          | Control output value of the speed controller |
+| P2_SCST      | \-100  | 100    | RPM         | Speed change proportional to frequency change of the STM |
+| P2_SIT01     | 0      | 3200   | RPM         | Current turbine RPM measured by speed probe |
+| P2_TripEx    | 0      | 1      | Boolean     | Trip emergency exit button |
+| P2_VIBTR01   | \-10   | 10     | ㎛           | Shaft-vibration-related Y-axis displacement near the 1st mass wheel |
+| P2_VIBTR02   | \-10   | 10     | ㎛           | Shaft-vibration-related X-axis displacement near the 1st mass wheel |
+| P2_VIBTR03   | \-10   | 10     | ㎛           | Shaft-vibration-related Y-axis displacement near the 2nd mass wheel |
+| P2_VIBTR04   | \-10   | 10     | ㎛           | Shaft-vibration-related X-axis displacement near the 2nd mass wheel |
+| P2_VT01      | 11     | 12     | rad/s       | Phase lag signal of the key phasor probe |
+| P2_VTR01     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR01 |
+| P2_VTR02     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR02 |
+| P2_VTR03     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR03 |
+| P2_VTR04     | \-10   | 10     | ㎛           | Preset vibration limit for the sensor P2_VIBTR03 |
+| P3_FIT01     | 0      | 27648  | \-          | Flow rate of water flowing into the upper water tank |
+| P3_LCP01D    | 0      | 27648  | \-          | Speed command for the pump LCP01 |
+| P3_LCV01D    | 0      | 27648  | \-          | Position command for the valve LCV01 |
+| P3_LH01      | 0      | 70     | %           | High water level set-point |
+| P3_LIT01     | 0      | 90     | %           | Water level of the upper water tank |
+| P3_LL01      | 0      | 70     | %           | Low water level set-point |
+| P3_PIT01     | 0      | 27648  | \-          | Pressure of water flowing into the upper water tank |
+| P4_HT_FD     | \-0.02 | 0.02   | mHz         | Frequency deviation of HTM |
+| P4_HT_PO     | 0      | 100    | MW          | Output power of HTM |
+| P4_HT_PS     | 0      | 100    | MW          | Scheduled power demand of HTM |
+| P4_LD        | 0      | 500    | MW          | Total electrical load demand |
+| P4_ST_FD     | \-0.02 | 0.02   | Hz          | Frequency deviation of STM |
+| P4_ST_GOV    | 0      | 27648  | \-          | Gate opening rate of STM |
+| P4_ST_LD     | 0      | 500    | MW          | Electrical load demand of STM |
+| P4_ST_PO     | 0      | 500    | MW          | Output power of STM |
+| P4_ST_PS     | 0      | 500    | MW          | Scheduled power demand of STM |
+| P4_ST_PT01   | 0      | 27648  | \-          | Digital value of steam pressure of STM |
+| P4_ST_TT01   | 0      | 27648  | \-          | Digital value of steam temperature of STM |
+
+For SWaT:
+| Feature        | Type     | Description                                                                                |
+| -------------- | -------- | ------------------------------------------------------------------------------------------ |
+| FIT-101        | Sensor   | Flow meter; Measures inflow into raw water tank.                                           |
+| LIT-101        | Sensor   | Level Transmitter; Raw water tank level.                                                   |
+| MV-101         | Actuator | Motorized valve; Controls water flow to the raw water tank.                                |
+| P-101          | Actuator | Pump; Pumps water from raw water tank to second stage.                                     |
+| P-102 (backup) | Actuator | Pump; Pumps water from raw water tank to second stage.                                     |
+| AIT-201        | Sensor   | Conductivity analyser; Measures NaCl level.                                                |
+| AIT-202        | Sensor   | pH analyser; Measures HCl level.                                                           |
+| AIT-203        | Sensor   | ORP analyser; Measures NaOCl level.                                                        |
+| FIT-201        | Sensor   | Flow Transmitter; Control dosing pumps.                                                    |
+| MV-201         | Actuator | Motorized valve; Controls water flow to the UF feed water tank.                            |
+| P-201          | Actuator | Dosing pump; NaCl dosing pump.                                                             |
+| P-202 (backup) | Actuator | Dosing pump; NaCl dosing pump.                                                             |
+| P-203          | Actuator | Dosing pump; HCl dosing pump.                                                              |
+| P-204 (backup) | Actuator | Dosing pump; HCl dosing pump.                                                              |
+| P-205          | Actuator | Dosing pump; NaOCl dosing pump.                                                            |
+| P-206 (backup) | Actuator | Dosing pump; NaOCl dosing pump.                                                            |
+| DPIT-301       | Sensor   | Di↵erential pressure indicating transmitter; Controls the back-wash process.               |
+| FIT-301        | Sensor   | Flow meter; Measures the flow of water in the UF stage.                                    |
+| LIT-301        | Sensor   | Level Transmitter; UF feed water tank level.                                               |
+| MV-301         | Actuator | Motorized Valve; Controls UF-Backwash process.                                             |
+| MV-302         | Actuator | Motorized  Valve;  Controls  water  from  UF  process  to  De-Chlorination unit.           |
+| MV-303         | Actuator | Motorized Valve; Controls UF-Backwash drain.                                               |
+| MV-304         | Actuator | Motorized Valve; Controls UF drain.                                                        |
+| P-301 (backup) | Actuator | UF feed Pump; Pumps water from UF feed water tank to RO feed water tank via UF filtration. |
+| P-302          | Actuator | UF feed Pump; Pumps water from UF feed water tank to RO feed water tank via UF filtration. |
+| AIT-401        | Sensor   | RO hardness meter of water.                                                                |
+| AIT-402        | Sensor   | ORP meter; Controls the NaHSO3dosing(P203), NaOCl dosing (P205).                           |
+| FIT-401        | Sensor   | Flow Transmitter ; Controls the UV dechlorinator.                                          |
+| LIT-401        | Actuator | Level Transmitter; RO feed water tank level.                                               |
+| P-401 (backup) | Actuator | Pump; Pumps water from RO feed tank to UV dechlorinator.                                   |
+| P-402          | Actuator | Pump; Pumps water from RO feed tank to UV dechlorinator.                                   |
+| P-403          | Actuator | Sodium bi-sulphate pump.                                                                   |
+| P-404 (backup) | Actuator | Sodium bi-sulphate pump.                                                                   |
+| UV-401         | Actuator | Dechlorinator; Removes chlorine from water.                                                |
+| AIT-501        | Sensor   | RO pH analyser; Measures HCl level.                                                        |
+| AIT-502        | Sensor   | RO feed ORP analyser; Measures NaOCl level.                                                |
+| AIT-503        | Sensor   | RO feed conductivity analyser; Measures NaCl level.                                        |
+| AIT-504        | Sensor   | RO permeate conductivity analyser; Measures NaCl level.                                    |
+| FIT-501        | Sensor   | Flow meter; RO membrane inlet flow meter.                                                  |
+| FIT-502        | Sensor   | Flow meter; RO Permeate flow meter.                                                        |
+| FIT-503        | Sensor   | Flow meter; RO Reject flow meter.                                                          |
+| FIT-504        | Sensor   | Flow meter; RO re-circulation flow meter.                                                  |
+| P-501          | Actuator | Pump; Pumps dechlorinated water to RO.                                                     |
+| P-502 (backup) | Actuator | Pump; Pumps dechlorinated water to RO.                                                     |
+| PIT-501        | Sensor   | Pressure meter; RO feed pressure.                                                          |
+| PIT-502        | Sensor   | Pressure meter; RO permeate pressure.                                                      |
+| PIT-503        | Sensor   | Pressure meter;RO reject pressure.                                                         |
+| FIT-601        | Sensor   | Flow meter; UF Backwash flow meter.                                                        |
+| P-601          | Actuator | Pump; Pumps water from RO permeate tank to raw water tank (not used for data collection).  |
+| P-602          | Actuator | Pump; Pumps water from UF back wash tank to UF filter to clean the membrane.               |
+| P-603          | Actuator | Not implemented in SWaT yet.                                                               |
 
 
 #### Data Processing

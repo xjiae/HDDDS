@@ -4,4 +4,4 @@ unzip data.zip
 
 mkdir -p saved_models
 mkdir -p saved_explanations
-
+mkdir -p results
